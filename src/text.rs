@@ -4,7 +4,7 @@ use std::{
     str::FromStr,
 };
 
-use crate::Error;
+use crate::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]

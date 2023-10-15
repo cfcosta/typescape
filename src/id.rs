@@ -2,7 +2,7 @@ use std::{fmt::Display, marker::PhantomData, str::FromStr};
 
 use uuid::Uuid;
 
-use crate::{Error, Kind};
+use crate::prelude::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Id<T> {

@@ -4,7 +4,7 @@ use std::{
     str::FromStr,
 };
 
-use crate::{Error, Kind};
+use crate::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -97,7 +97,7 @@ mod tests {
         fn invalid_emails_are_always_invalid(a in arb::<Invalid<Username>>()) {
             assert_eq!(
                 a.to_string().parse::<Username>(),
-                Err(Error::FailedParsing(crate::Kind::Username, a.to_string()))
+                Err(Error::FailedParsing(Kind::Username, a.to_string()))
             );
         }
     }
