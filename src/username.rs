@@ -17,7 +17,7 @@ impl FromStr for Username {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         use chumsky::{error::Cheap, prelude::*};
 
-        let result = filter::<_, _, Cheap<char>>(|&c: &char| c.is_ascii_alphabetic() || c == '_')
+        let result = filter::<_, _, Cheap<char>>(|&c: &char| c.is_ascii_alphanumeric())
             .map(Some)
             .chain::<char, Vec<_>, _>(
                 filter(|c: &char| c.is_ascii_alphanumeric() || *c == '_').repeated(),
@@ -77,12 +77,12 @@ mod tests {
 
     proptest! {
         #[test]
-        fn parses_correctly(u in "[a-zA-Z_][a-zA-Z0-9_]*") {
+        fn parses_correctly(u in "[a-zA-Z0-9][a-zA-Z0-9_]*") {
             u.to_string().parse::<Username>().expect("Failed parsing");
         }
 
         #[test]
-        fn rejects_all_invalid(u in "[^a-zA-Z_].*|.*[^a-zA-Z0-9_].*|.{26,}") {
+        fn rejects_all_invalid(u in "[^a-zA-Z0-9].*|.*[^a-zA-Z0-9_].*") {
             assert!(u.parse::<Username>().is_err())
         }
 
