@@ -6,10 +6,11 @@ mod email;
 mod id;
 mod invalid;
 mod sensitive;
+mod text;
 mod username;
 
 pub mod prelude {
-    pub use super::{email::*, id::*, invalid::*, sensitive::*, username::*, Error};
+    pub use super::{email::*, id::*, invalid::*, sensitive::*, text::*, username::*, Error};
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
