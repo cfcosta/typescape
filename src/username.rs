@@ -9,6 +9,7 @@ use crate::prelude::*;
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(transparent))]
+/// A handle for an user, with only alphanumeric characters and underscores
 pub struct Username(String);
 
 impl FromStr for Username {

@@ -11,10 +11,12 @@ pub mod prelude {
     use thiserror::Error;
 
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+    /// An enum representing all possible types of resources on this crate
     pub enum Kind {
         Email,
         Username,
         Id,
+        Text,
     }
 
     impl std::fmt::Display for Kind {
@@ -23,11 +25,13 @@ pub mod prelude {
                 Kind::Email => write!(f, "email"),
                 Kind::Username => write!(f, "username"),
                 Kind::Id => write!(f, "id"),
+                Kind::Text => write!(f, "text"),
             }
         }
     }
 
     #[derive(Debug, Clone, Error, PartialEq, Eq)]
+    /// All errors that might happening when using the resources
     pub enum Error {
         #[error("Failed to parse `{0}` resource: {1}")]
         FailedParsing(Kind, String),

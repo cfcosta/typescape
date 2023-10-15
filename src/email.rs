@@ -10,6 +10,7 @@ use crate::prelude::*;
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(transparent))]
 #[repr(transparent)]
+/// A validated e-mail address
 pub struct Email(String);
 
 impl FromStr for Email {

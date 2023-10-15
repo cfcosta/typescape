@@ -5,6 +5,7 @@ use uuid::Uuid;
 use crate::prelude::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+/// An unique id pointing to a resource
 pub struct Id<T> {
     inner: Uuid,
     _marker: PhantomData<T>,

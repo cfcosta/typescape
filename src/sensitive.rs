@@ -7,6 +7,8 @@ const MASK: &str = "******";
 #[derive(Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(transparent))]
+/// A container for sensitive data, such as passwords or credentials, blocking them from being
+/// printed.
 pub struct Sensitive<T>(T);
 
 impl<T> Sensitive<T> {

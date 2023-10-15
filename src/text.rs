@@ -10,6 +10,7 @@ use crate::prelude::*;
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(transparent))]
 #[repr(transparent)]
+/// A piece of UTF-8 valid text
 pub struct Text(String);
 
 impl FromStr for Text {

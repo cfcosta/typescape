@@ -4,6 +4,7 @@ use std::{fmt::Display, marker::PhantomData};
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(transparent))]
 #[repr(transparent)]
+/// A container for testing types with invalid values
 pub struct Invalid<T>(String, PhantomData<T>);
 
 impl<T> Invalid<T> {
