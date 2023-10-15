@@ -445,6 +445,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "402bb19d8e03f1d1a7450e2bd613980869438e0666331be3e073089124aa1adc"
 
 [[package]]
+name = "uuid"
+version = "1.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "79daa5ed5740825c40b389c5e50312b9c86df53fccd33f281df655642b43869d"
+dependencies = [
+ "getrandom",
+ "serde",
+]
+
+[[package]]
 name = "version_check"
 version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -566,4 +576,5 @@ dependencies = [
  "serde",
  "serde-email",
  "thiserror",
+ "uuid",
 ]

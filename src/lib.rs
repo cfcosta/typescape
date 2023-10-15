@@ -3,18 +3,20 @@ use std::fmt::Display;
 use thiserror::Error;
 
 mod email;
+mod id;
 mod invalid;
 mod sensitive;
 mod username;
 
 pub mod prelude {
-    pub use super::{email::*, invalid::*, sensitive::*, username::*, Error};
+    pub use super::{email::*, id::*, invalid::*, sensitive::*, username::*, Error};
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Kind {
     Email,
     Username,
+    Id,
 }
 
 impl Display for Kind {
@@ -22,6 +24,7 @@ impl Display for Kind {
         match self {
             Kind::Email => write!(f, "email"),
             Kind::Username => write!(f, "username"),
+            Kind::Id => write!(f, "id"),
         }
     }
 }

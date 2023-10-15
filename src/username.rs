@@ -60,7 +60,7 @@ impl<'a> arbitrary::Arbitrary<'a> for Username {
         let mut rng = StdRng::from_seed(u.arbitrary()?);
         let user = Username()
             .fake_with_rng::<String, _>(&mut rng)
-            .replace(".", "_");
+            .replace('.', "_");
 
         Ok(Self(user))
     }
