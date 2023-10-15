@@ -111,12 +111,16 @@ mod tests {
 
         #[test]
         fn preserves_order(a in arb::<usize>(), b in arb::<usize>()) {
-            if a == b {
-                assert_eq!(Sensitive::new(a), Sensitive::new(b));
-            } else if a > b {
-                assert!(Sensitive::new(a) > Sensitive::new(b));
-            } else {
-                assert!(Sensitive::new(a) < Sensitive::new(b));
+            match (a, b) {
+                (a, b) if a == b => {
+                    assert_eq!(Sensitive::new(a), Sensitive::new(b));
+                }
+                (a, b) if a > b => {
+                    assert!(Sensitive::new(a) > Sensitive::new(b));
+                }
+                (a, b) => {
+                    assert!(Sensitive::new(a) < Sensitive::new(b));
+                }
             }
         }
 
