@@ -1,9 +1,10 @@
 use std::fmt::{Debug, Display, Formatter};
+use std::hash::Hash;
 use std::str::FromStr;
 
 const MASK: &str = "******";
 
-#[derive(Clone, Hash)]
+#[derive(Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(transparent))]
 pub struct Sensitive<T>(T);
@@ -64,6 +65,12 @@ impl<T: PartialOrd> PartialOrd for Sensitive<T> {
 impl<T: Ord> Ord for Sensitive<T> {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.0.cmp(&other.0)
+    }
+}
+
+impl<T: Hash> Hash for Sensitive<T> {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.0.hash(state);
     }
 }
 
