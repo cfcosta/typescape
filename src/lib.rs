@@ -4,9 +4,10 @@ use thiserror::Error;
 
 mod email;
 mod invalid;
+mod sensitive;
 
 pub mod prelude {
-    pub use super::{email::*, invalid::*, Error};
+    pub use super::{email::*, invalid::*, sensitive::*, Error};
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
