@@ -2155,20 +2155,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "well-known"
-version = "0.1.0"
-dependencies = [
- "arbitrary",
- "check-if-email-exists",
- "fake",
- "proptest",
- "proptest-arbitrary-interop",
- "rand",
- "serde",
- "thiserror",
-]
-
-[[package]]
 name = "widestring"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2270,4 +2256,18 @@ checksum = "524e57b2c537c0f9b1e69f1965311ec12182b4122e45035b1508cd24d2adadb1"
 dependencies = [
  "cfg-if",
  "windows-sys",
+]
+
+[[package]]
+name = "wk-types"
+version = "0.1.0"
+dependencies = [
+ "arbitrary",
+ "check-if-email-exists",
+ "fake",
+ "proptest",
+ "proptest-arbitrary-interop",
+ "rand",
+ "serde",
+ "thiserror",
 ]
