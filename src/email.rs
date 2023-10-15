@@ -5,12 +5,12 @@ use std::{
 };
 
 use check_if_email_exists::syntax::check_syntax;
-use serde::{Deserialize, Serialize};
 
 use crate::{Error, Kind};
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[serde(transparent)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(transparent))]
 #[repr(transparent)]
 pub struct Email(String);
 

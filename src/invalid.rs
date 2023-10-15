@@ -1,15 +1,20 @@
 use std::{fmt::Display, marker::PhantomData};
 
-use serde::{Deserialize, Serialize};
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[serde(transparent)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(transparent))]
 #[repr(transparent)]
 pub struct Invalid<T>(String, PhantomData<T>);
 
 impl<T> Invalid<T> {
     pub fn get(&self) -> String {
         self.0.clone()
+    }
+}
+
+impl<T> Display for Invalid<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", &self.0)
     }
 }
 
@@ -25,12 +30,6 @@ impl<'a, T: std::str::FromStr> arbitrary::Arbitrary<'a> for Invalid<T> {
 
             return Ok(Self(s, Default::default()));
         }
-    }
-}
-
-impl<T> Display for Invalid<T> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", &self.0)
     }
 }
 
