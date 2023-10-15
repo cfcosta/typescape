@@ -1,0 +1,22 @@
+{
+  inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs";
+    flake-utils.url = "github:numtide/flake-utils";
+
+    rust-dev-tools = {
+      url = "github:cfcosta/rust-dev-tools.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.flake-utils.follows = "flake-utils";
+    };
+  };
+
+  outputs = inputs@{ self, nixpkgs, flake-utils, rust-dev-tools }:
+    flake-utils.lib.eachDefaultSystem (system:
+      let
+        tools = rust-dev-tools.setup system (pkgs: {
+          name = "wk";
+          rust = rust-dev-tools.version.fromCargoToml ./Cargo.toml;
+          dependencies = with pkgs; [ openssl ];
+        });
+      in { devShells.default = tools.devShell; });
+}
