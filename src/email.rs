@@ -4,10 +4,7 @@ use std::{
     str::FromStr,
 };
 
-use arbitrary::Arbitrary;
 use check_if_email_exists::syntax::check_syntax;
-use fake::{faker::internet::en::SafeEmail, Fake};
-use rand::{rngs::StdRng, SeedableRng};
 use serde::{Deserialize, Serialize};
 
 use crate::{Error, Kind};
@@ -16,14 +13,6 @@ use crate::{Error, Kind};
 #[serde(transparent)]
 #[repr(transparent)]
 pub struct Email(String);
-
-impl<'a> Arbitrary<'a> for Email {
-    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
-        let mut rng = StdRng::from_seed(u.arbitrary()?);
-        let domain = SafeEmail().fake_with_rng(&mut rng);
-        Ok(Self(domain))
-    }
-}
 
 impl FromStr for Email {
     type Err = Error;
@@ -57,7 +46,19 @@ impl DerefMut for Email {
     }
 }
 
-#[cfg(test)]
+#[cfg(feature = "arbitrary")]
+impl<'a> arbitrary::Arbitrary<'a> for Email {
+    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
+        use fake::{faker::internet::en::SafeEmail, Fake};
+        use rand::{rngs::StdRng, SeedableRng};
+
+        let mut rng = StdRng::from_seed(u.arbitrary()?);
+        let domain = SafeEmail().fake_with_rng(&mut rng);
+        Ok(Self(domain))
+    }
+}
+
+#[cfg(all(test, feature = "arbitrary"))]
 mod tests {
     use proptest::prelude::*;
     use proptest_arbitrary_interop::arb;
