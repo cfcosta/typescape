@@ -4,7 +4,7 @@ use std::{
     str::FromStr,
 };
 
-use check_if_email_exists::syntax::check_syntax;
+use serde_email::is_valid_email;
 
 use crate::{Error, Kind};
 
@@ -18,7 +18,7 @@ impl FromStr for Email {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if check_syntax(s).is_valid_syntax {
+        if is_valid_email(s) {
             Ok(Self(s.to_string()))
         } else {
             Err(Error::FailedParsing(Kind::Email, s.to_string()))
