@@ -14,7 +14,7 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         tools = rust-dev-tools.setup system (pkgs: {
-          name = "wk";
+          name = "ts";
           rust = rust-dev-tools.version.fromCargoToml ./Cargo.toml;
           dependencies = with pkgs; [ openssl ];
         });

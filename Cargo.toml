@@ -1,5 +1,5 @@
 [package]
-name = "wk-types"
+name = "typescape"
 version = "0.0.1"
 edition = "2021"
 rust-version = "1.72.1"
