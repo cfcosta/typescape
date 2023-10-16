@@ -1,12 +1,16 @@
-mod email;
 mod id;
 mod invalid;
 mod sensitive;
 mod text;
-mod username;
+
+#[cfg(feature = "internet")]
+mod internet;
 
 pub mod prelude {
-    pub use super::{email::*, id::*, invalid::*, sensitive::*, text::*, username::*};
+    pub use super::{id::*, invalid::*, sensitive::*, text::*};
+
+    #[cfg(feature = "internet")]
+    pub use super::internet::*;
 
     use thiserror::Error;
 
