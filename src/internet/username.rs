@@ -4,7 +4,16 @@ use std::{
     str::FromStr,
 };
 
-use crate::prelude::*;
+use crate::{prelude::*, testing::from_regex};
+
+use proptest::{
+    strategy::{Strategy, ValueTree},
+    string::string_regex,
+    test_runner::TestRunner,
+};
+
+#[cfg(feature = "testing")]
+use crate::testing::NegateArbitrary;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -52,7 +61,7 @@ impl DerefMut for Username {
     }
 }
 
-#[cfg(feature = "arbitrary")]
+#[cfg(feature = "testing")]
 impl<'a> arbitrary::Arbitrary<'a> for Username {
     fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
         use fake::{faker::internet::en::Username, Fake};
@@ -67,13 +76,21 @@ impl<'a> arbitrary::Arbitrary<'a> for Username {
     }
 }
 
+#[cfg(feature = "testing")]
+impl<'a> NegateArbitrary<'a> for Username {
+    fn negate_arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
+        let gen = from_regex(u, "[^a-zA-Z0-9].*|.*[^a-zA-Z0-9_].*");
+        Ok(Self(gen.get()))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use proptest::prelude::*;
 
-    use crate::prelude::*;
+    use crate::prelude::{testing::*, *};
 
-    #[cfg(feature = "arbitrary")]
+    #[cfg(feature = "testing")]
     use proptest_arbitrary_interop::arb;
 
     proptest! {
@@ -87,13 +104,13 @@ mod tests {
             assert!(u.parse::<Username>().is_err())
         }
 
-        #[cfg(feature = "arbitrary")]
+        #[cfg(feature = "testing")]
         #[test]
         fn arbitrary_email_is_always_valid(a in arb::<Username>()) {
             a.to_string().parse::<Username>().expect("Failed parsing");
         }
 
-        #[cfg(feature = "arbitrary")]
+        #[cfg(feature = "testing")]
         #[test]
         fn invalid_emails_are_always_invalid(a in arb::<Invalid<Username>>()) {
             assert_eq!(

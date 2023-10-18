@@ -4,7 +4,10 @@ use std::{
     str::FromStr,
 };
 
-use crate::prelude::*;
+use crate::{
+    prelude::*,
+    testing::{from_regex, NegateArbitrary},
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -45,7 +48,7 @@ impl DerefMut for Email {
     }
 }
 
-#[cfg(feature = "arbitrary")]
+#[cfg(feature = "testing")]
 impl<'a> arbitrary::Arbitrary<'a> for Email {
     fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
         use fake::{faker::internet::en::SafeEmail, Fake};
@@ -57,12 +60,21 @@ impl<'a> arbitrary::Arbitrary<'a> for Email {
     }
 }
 
-#[cfg(all(test, feature = "arbitrary"))]
+#[cfg(feature = "testing")]
+impl<'a> NegateArbitrary<'a> for Email {
+    fn negate_arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
+        let gen = from_regex(u, "[a-zA-Z0-9._%+-]+[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}");
+
+        Ok(Self(gen.get()))
+    }
+}
+
+#[cfg(all(test, feature = "testing"))]
 mod tests {
     use proptest::prelude::*;
     use proptest_arbitrary_interop::arb;
 
-    use crate::prelude::*;
+    use crate::prelude::{testing::*, *};
 
     proptest! {
         #[test]

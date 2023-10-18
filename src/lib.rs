@@ -1,16 +1,21 @@
 mod id;
-mod invalid;
 mod sensitive;
 mod text;
+
+#[cfg(feature = "testing")]
+pub mod testing;
 
 #[cfg(feature = "internet")]
 mod internet;
 
 pub mod prelude {
-    pub use super::{id::*, invalid::*, sensitive::*, text::*};
+    pub use super::{id::*, sensitive::*, text::*};
 
     #[cfg(feature = "internet")]
     pub use super::internet::*;
+
+    #[cfg(feature = "internet")]
+    pub use super::testing;
 
     use thiserror::Error;
 

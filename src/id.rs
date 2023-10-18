@@ -56,7 +56,7 @@ impl<'a, T: serde::Deserialize<'a>> serde::Deserialize<'a> for Id<T> {
     }
 }
 
-#[cfg(feature = "arbitrary")]
+#[cfg(feature = "testing")]
 impl<'a, T> arbitrary::Arbitrary<'a> for Id<T> {
     fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
         Ok(Uuid::from_u128(u.arbitrary()?).into())

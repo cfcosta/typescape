@@ -2,6 +2,10 @@ use std::fmt::{Debug, Display, Formatter};
 use std::hash::Hash;
 use std::str::FromStr;
 
+use arbitrary::{Arbitrary, Unstructured};
+
+use crate::testing::NegateArbitrary;
+
 const MASK: &str = "******";
 
 #[derive(Clone)]
@@ -76,14 +80,21 @@ impl<T: Hash> Hash for Sensitive<T> {
     }
 }
 
-#[cfg(feature = "arbitrary")]
-impl<'a, T: arbitrary::Arbitrary<'a>> arbitrary::Arbitrary<'a> for Sensitive<T> {
-    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
+#[cfg(feature = "testing")]
+impl<'a, T: Arbitrary<'a>> Arbitrary<'a> for Sensitive<T> {
+    fn arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self> {
         Ok(Self(u.arbitrary()?))
     }
 }
 
-#[cfg(all(test, feature = "arbitrary"))]
+#[cfg(feature = "testing")]
+impl<'a, T: NegateArbitrary<'a> + Arbitrary<'a>> NegateArbitrary<'a> for Sensitive<T> {
+    fn negate_arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self> {
+        Ok(Self(T::negate_arbitrary(u)?))
+    }
+}
+
+#[cfg(all(test, feature = "testing"))]
 mod tests {
     use proptest::prelude::*;
     use proptest_arbitrary_interop::arb;

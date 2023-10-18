@@ -1,45 +1,35 @@
-use std::{fmt::Display, marker::PhantomData};
+use std::fmt::Display;
+
+use crate::testing::NegateArbitrary;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(transparent))]
 #[repr(transparent)]
 /// A container for testing types with invalid values
-pub struct Invalid<T>(String, PhantomData<T>);
+pub struct Invalid<T>(T);
 
-impl<T> Invalid<T> {
-    pub fn get(&self) -> String {
-        self.0.clone()
-    }
-}
-
-impl<T> Display for Invalid<T> {
+impl<T: Display> Display for Invalid<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", &self.0)
     }
 }
 
-#[cfg(feature = "arbitrary")]
-impl<'a, T: std::str::FromStr> arbitrary::Arbitrary<'a> for Invalid<T> {
+impl<'a, T> arbitrary::Arbitrary<'a> for Invalid<T>
+where
+    T: NegateArbitrary<'a> + arbitrary::Arbitrary<'a>,
+{
     fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
-        loop {
-            let s = u.arbitrary::<String>()?;
-
-            if s.parse::<T>().is_ok() {
-                continue;
-            }
-
-            return Ok(Self(s, Default::default()));
-        }
+        Ok(Self(T::negate_arbitrary(u)?))
     }
 }
 
-#[cfg(all(test, feature = "arbitrary"))]
+#[cfg(test)]
 mod tests {
     use proptest::prelude::*;
     use proptest_arbitrary_interop::arb;
 
-    use crate::prelude::*;
+    use crate::prelude::{testing::*, *};
 
     proptest! {
         #[test]

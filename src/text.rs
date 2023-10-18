@@ -41,7 +41,7 @@ impl DerefMut for Text {
     }
 }
 
-#[cfg(feature = "arbitrary")]
+#[cfg(feature = "testing")]
 impl<'a> arbitrary::Arbitrary<'a> for Text {
     fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
         use rand::SeedableRng;
@@ -55,7 +55,7 @@ impl<'a> arbitrary::Arbitrary<'a> for Text {
     }
 }
 
-#[cfg(all(test, feature = "arbitrary"))]
+#[cfg(all(test, feature = "testing"))]
 mod tests {
     use proptest::prelude::*;
     use proptest_arbitrary_interop::arb;
