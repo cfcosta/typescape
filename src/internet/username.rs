@@ -4,13 +4,7 @@ use std::{
     str::FromStr,
 };
 
-use crate::{prelude::*, testing::from_regex};
-
-use proptest::{
-    strategy::{Strategy, ValueTree},
-    string::string_regex,
-    test_runner::TestRunner,
-};
+use crate::{testing::from_regex, Error, Kind};
 
 #[cfg(feature = "testing")]
 use crate::testing::NegateArbitrary;
@@ -84,14 +78,13 @@ impl<'a> NegateArbitrary<'a> for Username {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "testing"))]
 mod tests {
-    use proptest::prelude::*;
+    use proptest::*;
 
-    use crate::prelude::{testing::*, *};
+    use crate::testing::*;
 
-    #[cfg(feature = "testing")]
-    use proptest_arbitrary_interop::arb;
+    use super::*;
 
     proptest! {
         #[test]

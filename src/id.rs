@@ -2,7 +2,7 @@ use std::{fmt::Display, marker::PhantomData, str::FromStr};
 
 use uuid::Uuid;
 
-use crate::prelude::*;
+use crate::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 /// An unique id pointing to a resource

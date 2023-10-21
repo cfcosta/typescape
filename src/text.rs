@@ -4,7 +4,7 @@ use std::{
     str::FromStr,
 };
 
-use crate::prelude::*;
+use crate::*;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -57,10 +57,11 @@ impl<'a> arbitrary::Arbitrary<'a> for Text {
 
 #[cfg(all(test, feature = "testing"))]
 mod tests {
-    use proptest::prelude::*;
-    use proptest_arbitrary_interop::arb;
+    use proptest::*;
 
-    use crate::prelude::*;
+    use crate::testing::*;
+
+    use super::*;
 
     proptest! {
         #[test]

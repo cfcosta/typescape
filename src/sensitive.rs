@@ -96,11 +96,11 @@ impl<'a, T: NegateArbitrary<'a> + Arbitrary<'a>> NegateArbitrary<'a> for Sensiti
 
 #[cfg(all(test, feature = "testing"))]
 mod tests {
-    use proptest::prelude::*;
-    use proptest_arbitrary_interop::arb;
+    use proptest::*;
 
-    use super::MASK;
-    use crate::prelude::*;
+    use crate::testing::*;
+
+    use super::*;
 
     proptest! {
         #[test]

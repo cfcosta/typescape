@@ -5,8 +5,8 @@ use std::{
 };
 
 use crate::{
-    prelude::*,
     testing::{from_regex, NegateArbitrary},
+    *,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -71,10 +71,11 @@ impl<'a> NegateArbitrary<'a> for Email {
 
 #[cfg(all(test, feature = "testing"))]
 mod tests {
-    use proptest::prelude::*;
-    use proptest_arbitrary_interop::arb;
+    use proptest::*;
 
-    use crate::prelude::{testing::*, *};
+    use crate::testing::*;
+
+    use super::*;
 
     proptest! {
         #[test]

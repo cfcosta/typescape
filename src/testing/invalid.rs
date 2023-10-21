@@ -24,12 +24,11 @@ where
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "testing", feature = "internet"))]
 mod tests {
-    use proptest::prelude::*;
-    use proptest_arbitrary_interop::arb;
+    use proptest::*;
 
-    use crate::prelude::{testing::*, *};
+    use crate::{internet::*, testing::*, Error, Kind, Sensitive};
 
     proptest! {
         #[test]
