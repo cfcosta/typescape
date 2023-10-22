@@ -1,11 +1,18 @@
-use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub};
+use std::{
+    fmt::Debug,
+    ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub},
+};
 
-use rust_decimal::Decimal;
+use num_bigint::BigUint;
 use thiserror::Error;
 
 use crate::testing::NumberExt;
 
 pub mod currencies;
+use currencies::Currency;
+
+#[cfg(any(test, feature = "testing"))]
+use proptest::prelude::*;
 
 #[derive(Debug, Clone, Error, PartialEq, Eq)]
 pub enum Error {
@@ -13,19 +20,27 @@ pub enum Error {
     NegativeAmount,
 }
 
-#[derive(Debug, Clone, Copy)]
-#[cfg_attr(any(test, feature = "testing"), derive(proptest_derive::Arbitrary))]
-pub struct Money<C>(
-    #[cfg_attr(
-        any(test, feature = "testing"),
-        proptest(filter = "|d| d.is_zero() || d.is_sign_positive()")
-    )]
-    Decimal,
-    C,
-);
+#[derive(Debug, Clone)]
+pub struct Money<C>(BigUint, C);
 
-impl<C: Default> Money<C> {
-    pub fn new(amount: impl Into<Decimal>) -> Self {
+#[cfg(any(test, feature = "testing"))]
+impl<C: Debug + Default> Arbitrary for Money<C> {
+    type Parameters = ();
+    type Strategy = BoxedStrategy<Self>;
+
+    fn arbitrary_with(_: Self::Parameters) -> Self::Strategy {
+        any::<u128>()
+            .prop_filter("must have positive amount", |d| {
+                d.is_zero() || d.is_positive()
+            })
+            .prop_map(BigUint::from)
+            .prop_map(|i| Self(i, Default::default()))
+            .boxed()
+    }
+}
+
+impl<C: Default + Currency> Money<C> {
+    pub fn new(amount: impl Into<BigUint>) -> Self {
         Self(amount.into(), C::default())
     }
 }
@@ -41,8 +56,6 @@ impl<C> PartialEq for Money<C> {
         self.0 == other.0
     }
 }
-
-impl<C> Eq for Money<C> {}
 
 impl<C: Default> Add for Money<C> {
     type Output = Self;
@@ -125,30 +138,22 @@ mod tests {
 
     proptest! {
         #[test]
-        fn has_factory(a in any::<Money<USD>>()) {
-            prop_assert!(a.0.is_zero() || a.0.is_sign_positive())
+        fn has_factory(a in any::<M>()) {
+            prop_assert!(a.0.is_zero() || a.0.is_positive())
         }
 
         #[test]
-        fn converts_from_usize(
-            a in any::<usize>(),
-        ) {
-            prop_assert_eq!(Money::<USD>::new(a), Money::<USD>::new(Decimal::from(a)));
+        fn converts_from_usize(a in any::<usize>()) {
+            prop_assert_eq!(M::new(a), M::new(BigUint::from(a)));
         }
 
         #[test]
-        fn maintains_equality(
-            a in between::<Decimal, 0, { u32::MAX as usize }>(),
-            b in between::<Decimal, 0, { u32::MAX as usize }>(),
-        ) {
+        fn maintains_equality(a in 0..u128::MAX, b in 0..u128::MAX) {
             prop_assert_eq!(M::new(a) == M::new(b), a == b);
         }
 
         #[test]
-        fn maintains_ordering(
-            a in between::<Decimal, 0, { u32::MAX as usize }>(),
-            b in between::<Decimal, 0, { u32::MAX as usize }>(),
-        ) {
+        fn maintains_ordering(a in 0..u128::MAX, b in 0..u128::MAX) {
             prop_assert_eq!(M::new(a) == M::new(b), a == b);
             prop_assert_eq!(M::new(a) >= M::new(b), a >= b);
             prop_assert_eq!(M::new(a) <= M::new(b), a <= b);
@@ -158,8 +163,8 @@ mod tests {
 
         #[test]
         fn allows_addition(
-            a in between::<Decimal, 0, { u32::MAX as usize }>(),
-            b in between::<Decimal, 0, { u32::MAX as usize }>(),
+            a in (0..u32::MAX).prop_map(|x| x as u128),
+            b in (0..u32::MAX).prop_map(|x| x as u128),
         ) {
             prop_assert_eq!(M::new(a) + M::new(b), M::new(a + b));
             prop_assert_eq!(M::new(a) + M::new(b), M::new(b + a));
@@ -167,35 +172,33 @@ mod tests {
 
         #[test]
         fn allows_add_assign(
-            a in between::<Decimal, 0, { u32::MAX as usize }>(),
-            b in between::<Decimal, 0, { u32::MAX as usize }>(),
+            a in (0..u32::MAX).prop_map(|x| x as u128),
+            b in (0..u32::MAX).prop_map(|x| x as u128),
         ) {
             let mut ma = M::new(a);
             ma += M::new(b);
 
-            prop_assert_eq!(ma, M::new(a + b));
+            prop_assert_eq!(ma.clone(), M::new(a + b));
             prop_assert_eq!(ma, M::new(b + a));
         }
 
         #[test]
-        fn allows_subtraction_as_result(
-            (b, a) in in_order::<u32>().prop_map(|(a,b)| (a as usize, b as usize)).prop_map(Into::into)
-        ) {
+        fn allows_subtraction_as_result((b, a) in in_order::<u128>()) {
             prop_assert_eq!(M::new(a) - M::new(b), Ok(M::new(a - b)));
         }
 
         #[test]
         fn only_allow_positive_amounts_when_subtracting(
-            a in between::<Decimal, 0, { u32::MAX as usize }>(),
-            b in between::<Decimal, 0, { u32::MAX as usize }>(),
+            a in 0..u128::MAX,
+            b in 0..u128::MAX,
         ) {
             prop_assert_eq!((M::new(a) - M::new(b)).is_ok(), a > b);
         }
 
         #[test]
         fn allows_multiplication(
-            a in between::<Decimal, 0, { u32::MAX as usize }>(),
-            b in between::<Decimal, 0, { u32::MAX as usize }>(),
+            a in (0..u32::MAX).prop_map(|x| x as u128),
+            b in (0..u32::MAX).prop_map(|x| x as u128),
         ) {
             prop_assert_eq!(M::new(a) * M::new(b), M::new(a * b));
             prop_assert_eq!(M::new(a) * M::new(b), M::new(b * a));
@@ -203,29 +206,23 @@ mod tests {
 
         #[test]
         fn allows_mul_assign(
-            a in between::<Decimal, 0, { u32::MAX as usize }>(),
-            b in between::<Decimal, 0, { u32::MAX as usize }>(),
+            a in (0..u32::MAX).prop_map(|x| x as u128),
+            b in (0..u32::MAX).prop_map(|x| x as u128),
         ) {
             let mut ma = M::new(a);
             ma *= M::new(b);
 
-            prop_assert_eq!(ma, M::new(a * b));
+            prop_assert_eq!(ma.clone(), M::new(a * b));
             prop_assert_eq!(ma, M::new(b * a));
         }
 
         #[test]
-        fn allows_division(
-            a in between::<Decimal, 0, { u32::MAX as usize }>(),
-            b in between::<Decimal, 1, { u32::MAX as usize }>(),
-        ) {
+        fn allows_division(a in 0..u128::MAX, b in 1..u128::MAX) {
             prop_assert_eq!(M::new(a) / M::new(b), M::new(a / b));
         }
 
         #[test]
-        fn allows_div_assign(
-            a in between::<Decimal, 0, { u32::MAX as usize }>(),
-            b in between::<Decimal, 1, { u32::MAX as usize }>(),
-        ) {
+        fn allows_div_assign(a in 0..u128::MAX, b in 1..u128::MAX) {
             let mut ma = M::new(a);
             ma /= M::new(b);
 

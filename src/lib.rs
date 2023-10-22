@@ -11,7 +11,7 @@ pub mod internet;
 pub mod finances;
 
 #[cfg(feature = "finances")]
-pub use rust_decimal::Decimal;
+pub use num_bigint::BigUint;
 
 use thiserror::Error;
 

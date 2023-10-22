@@ -1,10 +1,28 @@
 #[cfg(feature = "finances")]
-use rust_decimal::{prelude::Zero, Decimal};
+use num_bigint::BigUint;
+
+#[cfg(feature = "finances")]
+use num_traits::identities::Zero;
 
 pub trait NumberExt {
     fn is_zero(&self) -> bool;
     fn is_positive(&self) -> bool;
     fn is_negative(&self) -> bool;
+}
+
+#[cfg(feature = "finances")]
+impl NumberExt for BigUint {
+    fn is_zero(&self) -> bool {
+        self == &Self::zero()
+    }
+
+    fn is_positive(&self) -> bool {
+        self > &Self::zero()
+    }
+
+    fn is_negative(&self) -> bool {
+        self < &Self::zero()
+    }
 }
 
 macro_rules! impl_number_ext {
@@ -39,18 +57,3 @@ impl_number_ext!(i128);
 impl_number_ext!(isize);
 impl_number_ext!(f32);
 impl_number_ext!(f64);
-
-#[cfg(feature = "finances")]
-impl NumberExt for Decimal {
-    fn is_zero(&self) -> bool {
-        self == &Self::zero()
-    }
-
-    fn is_positive(&self) -> bool {
-        self > &Self::zero()
-    }
-
-    fn is_negative(&self) -> bool {
-        self < &Self::zero()
-    }
-}
