@@ -28,15 +28,6 @@ impl<S: Strategy> PropTest<S> {
     }
 }
 
-pub fn from_regex<'a>(
-    u: &mut Unstructured<'a>,
-    regex: &str,
-) -> PropTest<RegexGeneratorStrategy<String>> {
-    let seed: [u8; 32] = u.arbitrary().unwrap();
-    let strategy = proptest::string::string_regex(regex).unwrap();
-    PropTest::new(strategy, seed)
-}
-
 pub struct ArbTree<T> {
     rng: RwLock<TestRng>,
     _marker: PhantomData<T>,
@@ -68,23 +59,22 @@ where
 
     fn current(&self) -> Self::Value {
         let (min, max) = T::size_hint(0);
-        let capacity = max.unwrap_or(min * 2);
+        let capacity = max.unwrap_or(min * 2 + 1);
         let mut data = vec![0u8; capacity];
 
         loop {
             let mut rng = self.rng.write().unwrap();
             rng.fill(&mut *data);
 
-            let u = Unstructured::new(&data);
+            let mut u = Unstructured::new(&data);
 
-            let x = match T::arbitrary_take_rest(u) {
+            let x = match T::arbitrary(&mut u) {
                 Ok(x) => x,
                 Err(arbitrary::Error::NotEnoughData) => {
                     // Double the buffer's size. Optionally have a max
                     // buffer size.
                     let new_len = data.len() * 2;
                     data.resize(new_len, 0);
-                    rng.fill(&mut data[capacity..new_len]);
 
                     continue;
                 }
@@ -129,4 +119,13 @@ where
     T: Debug + Arbitrary<'a>,
 {
     ArbStrategy(Default::default())
+}
+
+pub fn from_regex<'a>(
+    u: &mut Unstructured<'a>,
+    regex: &str,
+) -> PropTest<RegexGeneratorStrategy<String>> {
+    let seed: [u8; 32] = u.arbitrary().unwrap();
+    let strategy = proptest::string::string_regex(regex).unwrap();
+    PropTest::new(strategy, seed)
 }
