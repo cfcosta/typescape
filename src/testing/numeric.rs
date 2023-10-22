@@ -1,4 +1,6 @@
 use arbitrary::Arbitrary;
+
+#[cfg(feature = "finances")]
 use rust_decimal::{prelude::Zero, Decimal};
 
 pub trait NumberExt {

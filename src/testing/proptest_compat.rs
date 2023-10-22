@@ -121,8 +121,8 @@ where
     ArbStrategy(Default::default())
 }
 
-pub fn from_regex<'a>(
-    u: &mut Unstructured<'a>,
+pub fn from_regex(
+    u: &mut Unstructured<'_>,
     regex: &str,
 ) -> PropTest<RegexGeneratorStrategy<String>> {
     let seed: [u8; 32] = u.arbitrary().unwrap();
