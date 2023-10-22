@@ -40,4 +40,8 @@ impl std::fmt::Display for Kind {
 pub enum Error {
     #[error("Failed to parse `{0}` resource: {1}")]
     FailedParsing(Kind, String),
+
+    #[cfg(feature = "internet")]
+    #[error("Password hashing error: {0}")]
+    PasswordHashing(String),
 }
