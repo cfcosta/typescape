@@ -14,8 +14,15 @@ pub enum Error {
 }
 
 #[derive(Debug, Clone, Copy)]
-#[cfg_attr(feature = "testing", derive(proptest_derive::Arbitrary))]
-pub struct Money<C>(Decimal, C);
+#[cfg_attr(any(test, feature = "testing"), derive(proptest_derive::Arbitrary))]
+pub struct Money<C>(
+    #[cfg_attr(
+        any(test, feature = "testing"),
+        proptest(filter = "|d| d.is_zero() || d.is_sign_positive()")
+    )]
+    Decimal,
+    C,
+);
 
 impl<C: Default> Money<C> {
     pub fn new(amount: impl Into<Decimal>) -> Self {
@@ -117,6 +124,11 @@ mod tests {
     type M = Money<USD>;
 
     proptest! {
+        #[test]
+        fn has_factory(a in any::<Money<USD>>()) {
+            prop_assert!(a.0.is_zero() || a.0.is_sign_positive())
+        }
+
         #[test]
         fn converts_from_usize(
             a in any::<usize>(),
