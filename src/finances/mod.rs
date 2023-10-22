@@ -18,8 +18,8 @@ pub enum Error {
 pub struct Money<C>(Decimal, C);
 
 impl<C: Default> Money<C> {
-    pub fn new(amount: Decimal) -> Self {
-        Self(amount, C::default())
+    pub fn new(amount: impl Into<Decimal>) -> Self {
+        Self(amount.into(), C::default())
     }
 }
 
@@ -117,6 +117,13 @@ mod tests {
     type M = Money<USD>;
 
     proptest! {
+        #[test]
+        fn converts_from_usize(
+            a in gen::<usize>(),
+        ) {
+            prop_assert_eq!(Money::<USD>::new(a), Money::<USD>::new(Decimal::from(a)));
+        }
+
         #[test]
         fn maintains_equality(
             a in bound::<Decimal, 0, { u32::MAX as usize }>(),
