@@ -108,8 +108,9 @@ impl<C> NumberExt for Money<C> {
 
 #[cfg(all(test, feature = "testing"))]
 mod tests {
-    use crate::testing::*;
     use proptest::prelude::*;
+
+    use crate::testing::{numeric::*, pairs::*, *};
 
     use super::{currencies::USD, *};
 

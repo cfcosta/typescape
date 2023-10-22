@@ -4,12 +4,9 @@ use std::{
 };
 
 use arbitrary::{Arbitrary, Unstructured};
-use proptest::prelude::*;
 
 #[cfg(feature = "finances")]
 use rust_decimal::{prelude::Zero, Decimal};
-
-use crate::testing::gen;
 
 pub trait NumberExt {
     fn is_zero(&self) -> bool;
@@ -17,7 +14,7 @@ pub trait NumberExt {
     fn is_negative(&self) -> bool;
 }
 
-macro_rules! implement_is_zero {
+macro_rules! impl_number_ext {
     ($t:ty) => {
         impl NumberExt for $t {
             fn is_zero(&self) -> bool {
@@ -35,20 +32,20 @@ macro_rules! implement_is_zero {
     };
 }
 
-implement_is_zero!(u8);
-implement_is_zero!(u16);
-implement_is_zero!(u32);
-implement_is_zero!(u64);
-implement_is_zero!(u128);
-implement_is_zero!(usize);
-implement_is_zero!(i8);
-implement_is_zero!(i16);
-implement_is_zero!(i32);
-implement_is_zero!(i64);
-implement_is_zero!(i128);
-implement_is_zero!(isize);
-implement_is_zero!(f32);
-implement_is_zero!(f64);
+impl_number_ext!(u8);
+impl_number_ext!(u16);
+impl_number_ext!(u32);
+impl_number_ext!(u64);
+impl_number_ext!(u128);
+impl_number_ext!(usize);
+impl_number_ext!(i8);
+impl_number_ext!(i16);
+impl_number_ext!(i32);
+impl_number_ext!(i64);
+impl_number_ext!(i128);
+impl_number_ext!(isize);
+impl_number_ext!(f32);
+impl_number_ext!(f64);
 
 #[cfg(feature = "finances")]
 impl NumberExt for Decimal {
@@ -127,18 +124,4 @@ where
 
         Ok(Self(result))
     }
-}
-
-pub fn bound<
-    T: From<usize>
-        + Rem<Output = T>
-        + Add<Output = T>
-        + PartialOrd
-        + NumberExt
-        + Debug
-        + for<'a> Arbitrary<'a>,
-    const M: usize,
-    const N: usize,
->() -> impl proptest::prelude::Strategy<Value = T> {
-    gen::<InBounds<T, M, N>>().prop_map(|x| x.0)
 }

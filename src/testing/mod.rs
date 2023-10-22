@@ -1,67 +1,29 @@
-use std::fmt::Debug;
+use std::{
+    fmt::Debug,
+    ops::{Add, Rem},
+};
 
-use arbitrary::{Arbitrary, Unstructured};
+use arbitrary::Arbitrary;
 use proptest::strategy::Strategy;
 
-mod invalid;
-mod numeric;
-
-pub use self::invalid::*;
-pub use self::numeric::*;
-
+pub mod invalid;
+pub mod numeric;
+pub mod pairs;
 mod proptest_compat;
+
 pub use self::proptest_compat::*;
 
-#[derive(Debug, Clone)]
-pub struct InequalPair<T>(pub T, pub T);
+pub use self::{invalid::NegateArbitrary, numeric::NumberExt};
 
-impl<'a, T> Arbitrary<'a> for InequalPair<T>
-where
-    T: PartialEq + Arbitrary<'a>,
-{
-    fn arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self> {
-        let (a, mut b) = u.arbitrary()?;
-
-        while a == b {
-            b = T::arbitrary(u)?;
-        }
-
-        Ok(Self(a, b))
-    }
-
-    fn size_hint(depth: usize) -> (usize, Option<usize>) {
-        let (min, max) = T::size_hint(depth);
-
-        (min * 2, max.map(|max| max * 2))
-    }
-}
+use self::{
+    invalid::Invalid,
+    numeric::InBounds,
+    pairs::{InequalPair, SortedPair},
+};
 
 pub fn inequal_pair<T: PartialOrd + Debug + for<'a> Arbitrary<'a>>() -> impl Strategy<Value = (T, T)>
 {
     gen::<InequalPair<T>>().prop_map(|x| (x.0, x.1))
-}
-
-#[derive(Debug, Clone)]
-pub struct SortedPair<T>(pub T, pub T);
-
-impl<'a, T> Arbitrary<'a> for SortedPair<T>
-where
-    T: PartialOrd + PartialEq + Arbitrary<'a>,
-{
-    fn arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self> {
-        let InequalPair(a, b) = InequalPair::arbitrary(u)?;
-
-        if a > b {
-            return Ok(Self(a, b));
-        }
-
-        Ok(Self(b, a))
-    }
-
-    fn size_hint(depth: usize) -> (usize, Option<usize>) {
-        let (min, max) = T::size_hint(depth);
-        (min * 2, max.map(|max| max * 2))
-    }
 }
 
 pub fn sorted_pair<T: PartialOrd + Debug + for<'a> Arbitrary<'a>>() -> impl Strategy<Value = (T, T)>
@@ -69,10 +31,23 @@ pub fn sorted_pair<T: PartialOrd + Debug + for<'a> Arbitrary<'a>>() -> impl Stra
     gen::<SortedPair<T>>().prop_map(|x| (x.0, x.1))
 }
 
-/// Generates a "negated" version of an arbitrary type.
-pub trait NegateArbitrary<'a>
+pub fn invalid<T>() -> impl Strategy<Value = T>
 where
-    Self: Arbitrary<'a>,
+    T: Debug + for<'a> NegateArbitrary<'a>,
 {
-    fn negate_arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self>;
+    crate::testing::gen::<Invalid<T>>().prop_map(move |x| x.0)
+}
+
+pub fn bound<
+    T: From<usize>
+        + Rem<Output = T>
+        + Add<Output = T>
+        + PartialOrd
+        + NumberExt
+        + Debug
+        + for<'a> Arbitrary<'a>,
+    const M: usize,
+    const N: usize,
+>() -> impl proptest::prelude::Strategy<Value = T> {
+    gen::<InBounds<T, M, N>>().prop_map(|x| x.0)
 }

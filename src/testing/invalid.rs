@@ -1,12 +1,17 @@
 use std::{fmt::Debug, str::FromStr};
 
 use arbitrary::{Arbitrary, Unstructured};
-use proptest::prelude::Strategy;
 
-use crate::testing::NegateArbitrary;
+/// Generates a "negated" version of an arbitrary type.
+pub trait NegateArbitrary<'a>
+where
+    Self: Arbitrary<'a>,
+{
+    fn negate_arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self>;
+}
 
 #[derive(Debug, Clone)]
-pub struct Invalid<T>(T);
+pub struct Invalid<T>(pub T);
 
 impl<'a, T> Arbitrary<'a> for Invalid<T>
 where
@@ -38,13 +43,6 @@ impl<T: ToString> ToString for Invalid<T> {
     fn to_string(&self) -> String {
         self.0.to_string()
     }
-}
-
-pub fn invalid<T>() -> impl Strategy<Value = T>
-where
-    T: Debug + for<'a> NegateArbitrary<'a>,
-{
-    crate::testing::gen::<Invalid<T>>().prop_map(move |x| x.0)
 }
 
 #[cfg(all(test, feature = "testing", feature = "internet"))]
