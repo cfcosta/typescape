@@ -102,13 +102,11 @@ mod tests {
             assert!(u.parse::<Username>().is_err())
         }
 
-        #[cfg(feature = "testing")]
         #[test]
         fn arbitrary_email_is_always_valid(a in gen::<Username>()) {
             a.to_string().parse::<Username>().expect("Failed parsing");
         }
 
-        #[cfg(feature = "testing")]
         #[test]
         fn invalid_emails_are_always_invalid(a in invalid::<Username>()) {
             assert_eq!(
