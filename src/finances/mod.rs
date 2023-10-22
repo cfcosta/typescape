@@ -114,7 +114,7 @@ mod tests {
 
     impl<'a, const N: usize> arbitrary::Arbitrary<'a> for BoundedDecimal<N> {
         fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
-            let max = Decimal::from(N);
+            let max: Decimal = N.into();
             Ok(Self(Decimal::arbitrary(u)? % max, N))
         }
     }
