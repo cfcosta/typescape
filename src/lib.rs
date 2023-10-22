@@ -12,7 +12,7 @@ pub mod internet;
 pub mod finances;
 
 #[cfg(feature = "finances")]
-pub use rust_decimal::{Decimal, FromPrimitive};
+pub use rust_decimal::Decimal;
 
 pub use id::Id;
 pub use sensitive::Sensitive;
@@ -45,16 +45,4 @@ impl std::fmt::Display for Kind {
 pub enum Error {
     #[error("Failed to parse `{0}` resource: {1}")]
     FailedParsing(Kind, String),
-}
-
-#[cfg(feature = "finances")]
-#[derive(Debug, Clone, Error, PartialEq, Eq)]
-pub enum FinanceError<T: Asset> {
-    #[error("Mismatched currency, expected `{expected}`, got `{got}`")]
-    MismatchedExchange {
-        expected: T::Exchange,
-        got: T::Exchange,
-    },
-    #[error("Non-positive amounts are not allowed")]
-    NegativeAmount,
 }

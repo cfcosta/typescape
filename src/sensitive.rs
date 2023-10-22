@@ -115,26 +115,19 @@ mod tests {
 
         #[test]
         fn preserves_equality(a in arb::<String>(), b in arb::<String>()) {
-            if a == b {
-                assert_eq!(Sensitive::new(a), Sensitive::new(b));
-            } else {
-                assert_ne!(Sensitive::new(a), Sensitive::new(b));
-            }
+            prop_assert_eq!(
+                Sensitive::new(a.clone()) == Sensitive::new(b.clone()),
+                a == b
+            );
         }
 
         #[test]
         fn preserves_order(a in arb::<usize>(), b in arb::<usize>()) {
-            match (a, b) {
-                (a, b) if a == b => {
-                    assert_eq!(Sensitive::new(a), Sensitive::new(b));
-                }
-                (a, b) if a > b => {
-                    assert!(Sensitive::new(a) > Sensitive::new(b));
-                }
-                (a, b) => {
-                    assert!(Sensitive::new(a) < Sensitive::new(b));
-                }
-            }
+            prop_assert_eq!(Sensitive::new(a) == Sensitive::new(b), a == b);
+            prop_assert_eq!(Sensitive::new(a) >= Sensitive::new(b), a >= b);
+            prop_assert_eq!(Sensitive::new(a) <= Sensitive::new(b), a <= b);
+            prop_assert_eq!(Sensitive::new(a) > Sensitive::new(b), a > b);
+            prop_assert_eq!(Sensitive::new(a) < Sensitive::new(b), a < b);
         }
 
         #[test]
