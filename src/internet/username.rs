@@ -12,6 +12,7 @@ use crate::testing::NegateArbitrary;
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(transparent))]
+#[repr(transparent)]
 /// A handle for an user, with only alphanumeric characters and underscores
 pub struct Username(String);
 
@@ -67,6 +68,10 @@ impl<'a> arbitrary::Arbitrary<'a> for Username {
             .replace('.', "_");
 
         Ok(Self(user))
+    }
+
+    fn size_hint(depth: usize) -> (usize, Option<usize>) {
+        String::size_hint(depth)
     }
 }
 

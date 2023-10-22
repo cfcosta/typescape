@@ -53,6 +53,17 @@ impl<'a> arbitrary::Arbitrary<'a> for Text {
             u8::arbitrary(u)? as usize,
         )))
     }
+
+    fn size_hint(depth: usize) -> (usize, Option<usize>) {
+        let (smin, smax) = String::size_hint(depth);
+        let (vmin, vmax) = <[u8; 32]>::size_hint(depth);
+        let (umin, umax) = u8::size_hint(depth);
+
+        (
+            smin + vmin + umin,
+            smax.zip(vmax).zip(umax).map(|((a, b), c)| a + b + c),
+        )
+    }
 }
 
 #[cfg(all(test, feature = "testing"))]

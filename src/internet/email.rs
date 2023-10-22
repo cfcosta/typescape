@@ -58,6 +58,10 @@ impl<'a> arbitrary::Arbitrary<'a> for Email {
         let domain = SafeEmail().fake_with_rng(&mut rng);
         Ok(Self(domain))
     }
+
+    fn size_hint(depth: usize) -> (usize, Option<usize>) {
+        String::size_hint(depth)
+    }
 }
 
 #[cfg(feature = "testing")]
