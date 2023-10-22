@@ -15,7 +15,7 @@
       let
         tools = rust-dev-tools.setup system (pkgs: {
           name = "ts";
-          rust = rust-dev-tools.version.fromCargoToml ./Cargo.toml;
+          rust = rust-dev-tools.version.fromToolchainFile ./rust-toolchain.toml;
           dependencies = with pkgs; [ ];
         });
       in { devShells.default = tools.devShell; });
