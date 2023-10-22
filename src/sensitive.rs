@@ -104,7 +104,7 @@ mod tests {
 
     proptest! {
         #[test]
-        fn hides_internal_representation(s in arb::<Sensitive<String>>()) {
+        fn hides_internal_representation(s in gen::<Sensitive<String>>()) {
             assert_eq!(s.to_string(), MASK);
             assert_eq!(format!("{}", s), MASK);
             assert_eq!(
@@ -114,7 +114,7 @@ mod tests {
         }
 
         #[test]
-        fn preserves_equality(a in arb::<String>(), b in arb::<String>()) {
+        fn preserves_equality(a in gen::<String>(), b in gen::<String>()) {
             prop_assert_eq!(
                 Sensitive::new(a.clone()) == Sensitive::new(b.clone()),
                 a == b
@@ -122,7 +122,7 @@ mod tests {
         }
 
         #[test]
-        fn preserves_order(a in arb::<usize>(), b in arb::<usize>()) {
+        fn preserves_order(a in gen::<usize>(), b in gen::<usize>()) {
             prop_assert_eq!(Sensitive::new(a) == Sensitive::new(b), a == b);
             prop_assert_eq!(Sensitive::new(a) >= Sensitive::new(b), a >= b);
             prop_assert_eq!(Sensitive::new(a) <= Sensitive::new(b), a <= b);
@@ -131,7 +131,7 @@ mod tests {
         }
 
         #[test]
-        fn preserves_into(a in arb::<usize>()) {
+        fn preserves_into(a in gen::<usize>()) {
             assert_eq!(Sensitive::from(a), Sensitive::new(a));
         }
     }

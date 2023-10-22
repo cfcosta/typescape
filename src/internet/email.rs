@@ -83,12 +83,12 @@ mod tests {
 
     proptest! {
         #[test]
-        fn arbitrary_email_is_always_valid(a in arb::<Email>()) {
+        fn arbitrary_email_is_always_valid(a in gen::<Email>()) {
             a.to_string().parse::<Email>().expect("Failed parsing");
         }
 
         #[test]
-        fn invalid_emails_are_always_invalid(a in arb::<Invalid<Email>>()) {
+        fn invalid_emails_are_always_invalid(a in invalid::<Email>()) {
             assert_eq!(
                 a.to_string().parse::<Email>(),
                 Err(Error::FailedParsing(Kind::Email, a.to_string()))

@@ -1,6 +1,7 @@
 use std::fmt::Debug;
 
 use arbitrary::{Arbitrary, Unstructured};
+use proptest::strategy::Strategy;
 
 mod invalid;
 mod numeric;
@@ -35,6 +36,11 @@ where
     }
 }
 
+pub fn inequal_pair<T: PartialOrd + Debug + for<'a> Arbitrary<'a>>() -> impl Strategy<Value = (T, T)>
+{
+    gen::<InequalPair<T>>().prop_map(|x| (x.0, x.1))
+}
+
 #[derive(Debug, Clone)]
 pub struct SortedPair<T>(pub T, pub T);
 
@@ -56,6 +62,11 @@ where
         let (min, max) = T::size_hint(depth);
         (min * 2, max.map(|max| max * 2))
     }
+}
+
+pub fn sorted_pair<T: PartialOrd + Debug + for<'a> Arbitrary<'a>>() -> impl Strategy<Value = (T, T)>
+{
+    gen::<SortedPair<T>>().prop_map(|x| (x.0, x.1))
 }
 
 /// Generates a "negated" version of an arbitrary type.

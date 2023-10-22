@@ -1,9 +1,15 @@
-use std::ops::{Add, Rem};
+use std::{
+    fmt::Debug,
+    ops::{Add, Rem},
+};
 
 use arbitrary::{Arbitrary, Unstructured};
+use proptest::prelude::*;
 
 #[cfg(feature = "finances")]
 use rust_decimal::{prelude::Zero, Decimal};
+
+use crate::testing::gen;
 
 pub trait NumberExt {
     fn is_zero(&self) -> bool;
@@ -96,11 +102,19 @@ where
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub struct InBounds<T, const N: usize, const M: usize>(pub T);
+pub struct InBounds<T, const N: usize, const M: usize>(pub T)
+where
+    T: Debug;
 
 impl<'a, T, const N: usize, const M: usize> Arbitrary<'a> for InBounds<T, N, M>
 where
-    T: From<usize> + Arbitrary<'a> + Rem<Output = T> + Add<Output = T> + PartialOrd + NumberExt,
+    T: From<usize>
+        + Arbitrary<'a>
+        + Rem<Output = T>
+        + Add<Output = T>
+        + PartialOrd
+        + NumberExt
+        + Debug,
 {
     fn arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self> {
         let mut result = T::arbitrary(u)?;
@@ -113,4 +127,18 @@ where
 
         Ok(Self(result))
     }
+}
+
+pub fn bound<
+    T: From<usize>
+        + Rem<Output = T>
+        + Add<Output = T>
+        + PartialOrd
+        + NumberExt
+        + Debug
+        + for<'a> Arbitrary<'a>,
+    const M: usize,
+    const N: usize,
+>() -> impl proptest::prelude::Strategy<Value = T> {
+    gen::<InBounds<T, M, N>>().prop_map(|x| x.0)
 }

@@ -114,21 +114,20 @@ mod tests {
     use super::{currencies::USD, *};
 
     type M = Money<USD>;
-    type Bound = InBounds<Decimal, 0, { u32::MAX as usize }>;
 
     proptest! {
         #[test]
         fn maintains_equality(
-            InBounds(a) in arb::<Bound>(),
-            InBounds(b) in arb::<Bound>(),
+            a in bound::<Decimal, 0, { u32::MAX as usize }>(),
+            b in bound::<Decimal, 0, { u32::MAX as usize }>(),
         ) {
             prop_assert_eq!(M::new(a) == M::new(b), a == b);
         }
 
         #[test]
         fn maintains_ordering(
-            InBounds(a) in arb::<Bound>(),
-            InBounds(b) in arb::<Bound>(),
+            a in bound::<Decimal, 0, { u32::MAX as usize }>(),
+            b in bound::<Decimal, 0, { u32::MAX as usize }>(),
         ) {
             prop_assert_eq!(M::new(a) == M::new(b), a == b);
             prop_assert_eq!(M::new(a) >= M::new(b), a >= b);
@@ -139,8 +138,8 @@ mod tests {
 
         #[test]
         fn allows_addition(
-            InBounds(a) in arb::<Bound>(),
-            InBounds(b) in arb::<Bound>(),
+            a in bound::<Decimal, 0, { u32::MAX as usize }>(),
+            b in bound::<Decimal, 0, { u32::MAX as usize }>(),
         ) {
             prop_assert_eq!(M::new(a) + M::new(b), M::new(a + b));
             prop_assert_eq!(M::new(a) + M::new(b), M::new(b + a));
@@ -148,8 +147,8 @@ mod tests {
 
         #[test]
         fn allows_add_assign(
-            InBounds(a) in arb::<Bound>(),
-            InBounds(b) in arb::<Bound>(),
+            a in bound::<Decimal, 0, { u32::MAX as usize }>(),
+            b in bound::<Decimal, 0, { u32::MAX as usize }>(),
         ) {
             let mut ma = M::new(a);
             ma += M::new(b);
@@ -160,23 +159,23 @@ mod tests {
 
         #[test]
         fn allows_subtraction_as_result(
-            SortedPair(InBounds(a), InBounds(b)) in arb::<SortedPair<Bound>>(),
+            SortedPair(InBounds(a), InBounds(b)) in gen::<SortedPair<InBounds<Decimal, 0, { u32::MAX as usize }>>>(),
         ) {
             prop_assert_eq!(M::new(a) - M::new(b), Ok(M::new(a - b)));
         }
 
         #[test]
         fn only_allow_positive_amounts_when_subtracting(
-            InBounds(a) in arb::<Bound>(),
-            InBounds(b) in arb::<Bound>(),
+            a in bound::<Decimal, 0, { u32::MAX as usize }>(),
+            b in bound::<Decimal, 0, { u32::MAX as usize }>(),
         ) {
             prop_assert_eq!((M::new(a) - M::new(b)).is_ok(), a > b);
         }
 
         #[test]
         fn allows_multiplication(
-            InBounds(a) in arb::<Bound>(),
-            InBounds(b) in arb::<Bound>(),
+            a in bound::<Decimal, 0, { u32::MAX as usize }>(),
+            b in bound::<Decimal, 0, { u32::MAX as usize }>(),
         ) {
             prop_assert_eq!(M::new(a) * M::new(b), M::new(a * b));
             prop_assert_eq!(M::new(a) * M::new(b), M::new(b * a));
@@ -184,8 +183,8 @@ mod tests {
 
         #[test]
         fn allows_mul_assign(
-            InBounds(a) in arb::<Bound>(),
-            InBounds(b) in arb::<Bound>(),
+            a in bound::<Decimal, 0, { u32::MAX as usize }>(),
+            b in bound::<Decimal, 0, { u32::MAX as usize }>(),
         ) {
             let mut ma = M::new(a);
             ma *= M::new(b);
@@ -196,16 +195,16 @@ mod tests {
 
         #[test]
         fn allows_division(
-            InBounds(a) in arb::<InBounds<Decimal, 0, { u32::MAX as usize }>>(),
-            InBounds(b) in arb::<InBounds<Decimal, 1, { u32::MAX as usize }>>(),
+            a in bound::<Decimal, 0, { u32::MAX as usize }>(),
+            b in bound::<Decimal, 1, { u32::MAX as usize }>(),
         ) {
             prop_assert_eq!(M::new(a) / M::new(b), M::new(a / b));
         }
 
         #[test]
         fn allows_div_assign(
-            InBounds(a) in arb::<InBounds<Decimal, 0, { u32::MAX as usize }>>(),
-            InBounds(b) in arb::<InBounds<Decimal, 1, { u32::MAX as usize }>>(),
+            a in bound::<Decimal, 0, { u32::MAX as usize }>(),
+            b in bound::<Decimal, 1, { u32::MAX as usize }>(),
         ) {
             let mut ma = M::new(a);
             ma /= M::new(b);

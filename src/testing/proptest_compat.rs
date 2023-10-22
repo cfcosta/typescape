@@ -113,7 +113,7 @@ where
     }
 }
 
-pub fn arb<'a, T>() -> ArbStrategy<T>
+pub fn gen<'a, T>() -> ArbStrategy<T>
 where
     T: Arbitrary<'a> + Debug,
     T: Debug + Arbitrary<'a>,

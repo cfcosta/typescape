@@ -1,27 +1,36 @@
-use std::fmt::Display;
+use std::fmt::Debug;
+
+use arbitrary::{Arbitrary, Unstructured};
+use proptest::prelude::Strategy;
 
 use crate::testing::NegateArbitrary;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "serde", serde(transparent))]
-#[repr(transparent)]
-/// A container for testing types with invalid values
+#[derive(Debug, Clone)]
 pub struct Invalid<T>(T);
 
-impl<T: Display> Display for Invalid<T> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", &self.0)
+impl<'a, T> Arbitrary<'a> for Invalid<T>
+where
+    T: NegateArbitrary<'a>,
+{
+    fn arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self> {
+        Ok(Self(T::negate_arbitrary(u)?))
     }
 }
 
-impl<'a, T> arbitrary::Arbitrary<'a> for Invalid<T>
+impl<'a, T> NegateArbitrary<'a> for Invalid<T>
 where
-    T: NegateArbitrary<'a> + arbitrary::Arbitrary<'a>,
+    T: NegateArbitrary<'a> + Arbitrary<'a>,
 {
-    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
-        Ok(Self(T::negate_arbitrary(u)?))
+    fn negate_arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self> {
+        Ok(Self(T::arbitrary(u)?))
     }
+}
+
+pub fn invalid<T>() -> impl Strategy<Value = T>
+where
+    T: Debug + for<'a> NegateArbitrary<'a>,
+{
+    crate::testing::gen::<Invalid<T>>().prop_map(move |x| x.0)
 }
 
 #[cfg(all(test, feature = "testing", feature = "internet"))]
@@ -32,7 +41,7 @@ mod tests {
 
     proptest! {
         #[test]
-        fn generates_invalid_emails(a in arb::<Invalid<Email>>()) {
+        fn generates_invalid_emails(a in invalid::<Email>()) {
             assert_eq!(
                 a.to_string().parse::<Email>(),
                 Err(Error::FailedParsing(Kind::Email, a.to_string()))
@@ -40,7 +49,7 @@ mod tests {
         }
 
         #[test]
-        fn generates_invalid_usernames(a in arb::<Invalid<Username>>()) {
+        fn generates_invalid_usernames(a in invalid::<Username>()) {
             assert_eq!(
                 a.to_string().parse::<Username>(),
                 Err(Error::FailedParsing(Kind::Username, a.to_string()))
@@ -48,7 +57,7 @@ mod tests {
         }
 
         #[test]
-        fn generates_invalid_composite_types(a in arb::<Invalid<Sensitive<Username>>>()) {
+        fn generates_invalid_composite_types(a in invalid::<Sensitive<Username>>()) {
             assert_eq!(
                 a.to_string().parse::<Username>(),
                 Err(Error::FailedParsing(Kind::Username, a.to_string()))

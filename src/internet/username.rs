@@ -104,13 +104,13 @@ mod tests {
 
         #[cfg(feature = "testing")]
         #[test]
-        fn arbitrary_email_is_always_valid(a in arb::<Username>()) {
+        fn arbitrary_email_is_always_valid(a in gen::<Username>()) {
             a.to_string().parse::<Username>().expect("Failed parsing");
         }
 
         #[cfg(feature = "testing")]
         #[test]
-        fn invalid_emails_are_always_invalid(a in arb::<Invalid<Username>>()) {
+        fn invalid_emails_are_always_invalid(a in invalid::<Username>()) {
             assert_eq!(
                 a.to_string().parse::<Username>(),
                 Err(Error::FailedParsing(Kind::Username, a.to_string()))

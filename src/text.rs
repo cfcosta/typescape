@@ -76,7 +76,7 @@ mod tests {
 
     proptest! {
         #[test]
-        fn arbitrary_text_is_always_valid(a in arb::<Text>()) {
+        fn arbitrary_text_is_always_valid(a in gen::<Text>()) {
             a.to_string().parse::<Text>().expect("Failed parsing");
         }
     }
