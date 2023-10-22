@@ -34,4 +34,5 @@ testing = [
 ]
 finances = ["dep:rust_decimal"]
 internet = []
+lang = []
 serde = ["dep:serde", "uuid/serde"]

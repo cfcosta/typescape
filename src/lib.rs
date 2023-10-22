@@ -1,6 +1,5 @@
-mod id;
-mod sensitive;
-mod text;
+#[cfg(feature = "lang")]
+pub mod lang;
 
 #[cfg(any(test, feature = "testing"))]
 pub mod testing;
@@ -13,10 +12,6 @@ pub mod finances;
 
 #[cfg(feature = "finances")]
 pub use rust_decimal::Decimal;
-
-pub use id::Id;
-pub use sensitive::Sensitive;
-pub use text::Text;
 
 use thiserror::Error;
 
