@@ -3,7 +3,10 @@ use std::fmt::Debug;
 use arbitrary::{Arbitrary, Unstructured};
 
 mod invalid;
+mod numeric;
+
 pub use self::invalid::*;
+pub use self::numeric::*;
 
 mod proptest_compat;
 pub use self::proptest_compat::*;

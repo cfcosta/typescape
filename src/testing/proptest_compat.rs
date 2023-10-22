@@ -59,7 +59,7 @@ where
 
     fn current(&self) -> Self::Value {
         let (min, max) = T::size_hint(0);
-        let capacity = max.unwrap_or(min * 2) + 1;
+        let capacity = max.unwrap_or(min * 2) + 16;
         let mut data = vec![0u8; capacity];
 
         loop {

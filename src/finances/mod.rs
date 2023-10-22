@@ -1,228 +1,226 @@
-use std::ops::{Add, Sub};
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub};
 
 use rust_decimal::Decimal;
-use strum::{Display, EnumCount, EnumIter, EnumString, IntoEnumIterator};
+use thiserror::Error;
 
-mod asset;
+use crate::testing::NumberExt;
 
-pub use asset::Asset;
+pub mod currencies;
 
-use crate::FinanceError;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumIter, EnumString, EnumCount, Display)]
-pub enum Currency {
-    CHF,
-    EUR,
-    USD,
-    BRL,
+#[derive(Debug, Clone, Error, PartialEq, Eq)]
+pub enum Error {
+    #[error("Negative amount is not allowed")]
+    NegativeAmount,
 }
 
-impl<'a> arbitrary::Arbitrary<'a> for Currency {
-    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
-        let variants = Self::iter().collect::<Vec<_>>();
-        let index = usize::arbitrary(u)? % variants.len();
+#[derive(Debug, Clone, Copy)]
+#[cfg_attr(feature = "testing", derive(arbitrary::Arbitrary))]
+pub struct Money<C>(Decimal, C);
 
-        Ok(variants[index])
+impl<C: Default> Money<C> {
+    pub fn new(amount: Decimal) -> Self {
+        Self(amount, C::default())
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-#[cfg_attr(feature = "testing", derive(arbitrary::Arbitrary))]
-pub struct Money {
-    pub currency: Currency,
-    pub amount: Decimal,
+impl<C> PartialOrd for Money<C> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.0.partial_cmp(&other.0)
+    }
 }
 
-impl Add for Money {
-    type Output = Result<Self, FinanceError<Self>>;
+impl<C> PartialEq for Money<C> {
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0
+    }
+}
+
+impl<C> Eq for Money<C> {}
+
+impl<C: Default> Add for Money<C> {
+    type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
-        if self.can_exchange(&rhs) {
-            Ok(self.with_amount(self.amount() + rhs.amount()))
-        } else {
-            Err(FinanceError::MismatchedExchange {
-                expected: self.exchange(),
-                got: rhs.exchange(),
-            })
-        }
+        Self(self.0 + rhs.0, C::default())
     }
 }
 
-impl Sub for Money {
-    type Output = Result<Self, FinanceError<Self>>;
+impl<C> AddAssign for Money<C> {
+    fn add_assign(&mut self, rhs: Self) {
+        self.0 += rhs.0;
+    }
+}
+
+impl<C: Default> Sub for Money<C> {
+    type Output = Result<Self, Error>;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        if self.can_exchange(&rhs) {
-            if self.amount() < rhs.amount() {
-                return Err(FinanceError::NegativeAmount);
-            }
-
-            return Ok(self.with_amount(self.amount() - rhs.amount()));
-        }
-
-        Err(FinanceError::MismatchedExchange {
-            expected: self.exchange(),
-            got: rhs.exchange(),
-        })
-    }
-}
-
-impl Asset for Money {
-    type Amount = Decimal;
-    type Exchange = Currency;
-
-    fn can_exchange(&self, other: &Self) -> bool {
-        self.currency == other.currency
-    }
-
-    fn with_rate(&self, other: Self::Exchange, rate: Self::Amount) -> Self {
-        Self {
-            currency: other,
-            amount: self.amount * rate,
-        }
-    }
-
-    fn amount(&self) -> Self::Amount {
-        self.amount
-    }
-
-    fn exchange(&self) -> Self::Exchange {
-        self.currency
-    }
-
-    fn with_amount(&self, other: Self::Amount) -> Self {
-        Self {
-            amount: other,
-            ..*self
-        }
-    }
-
-    fn with_exchange(&self, other: Self::Exchange) -> Self {
-        Self {
-            currency: other,
-            ..*self
+        if self > rhs {
+            Ok(Self(self.0 - rhs.0, C::default()))
+        } else {
+            Err(Error::NegativeAmount)
         }
     }
 }
 
-impl Money {
-    pub fn new(amount: Decimal, currency: Currency) -> Self {
-        Self { currency, amount }
+impl<C: Default> Mul for Money<C> {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        Self(self.0 * rhs.0, C::default())
+    }
+}
+
+impl<C> MulAssign for Money<C> {
+    fn mul_assign(&mut self, rhs: Self) {
+        self.0 *= rhs.0;
+    }
+}
+
+impl<C: Default> Div for Money<C> {
+    type Output = Self;
+
+    fn div(self, rhs: Self) -> Self::Output {
+        Self(self.0 / rhs.0, C::default())
+    }
+}
+
+impl<C> DivAssign for Money<C> {
+    fn div_assign(&mut self, rhs: Self) {
+        self.0 /= rhs.0;
+    }
+}
+
+#[cfg(feature = "testing")]
+impl<C> NumberExt for Money<C> {
+    fn is_zero(&self) -> bool {
+        self.0.is_zero()
+    }
+
+    fn is_positive(&self) -> bool {
+        self.0.is_sign_positive()
     }
 }
 
 #[cfg(all(test, feature = "testing"))]
 mod tests {
-    use proptest::*;
-    use rust_decimal::FromPrimitive;
+    use crate::testing::*;
+    use proptest::prelude::*;
 
-    use crate::{testing::*, *};
+    use super::{currencies::USD, *};
 
-    #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-    struct UpTo<const N: usize>(Decimal);
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+    pub struct BoundedDecimal<const N: usize>(Decimal, usize);
 
-    impl<'a, const N: usize> arbitrary::Arbitrary<'a> for UpTo<N> {
+    impl<'a, const N: usize> arbitrary::Arbitrary<'a> for BoundedDecimal<N> {
         fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
-            let decimal: Decimal = u.arbitrary()?;
-            Ok(Self(decimal % Decimal::from_usize(N).unwrap()))
+            let max = Decimal::from(N);
+            Ok(Self(Decimal::arbitrary(u)? % max, N))
         }
     }
 
     proptest! {
         #[test]
-        fn sum_commutates(
-            UpTo(a) in arb::<UpTo<{ usize::MAX }>>(),
-            UpTo(b) in arb::<UpTo<{ usize::MAX }>>(),
-            currency in arb::<Currency>()
+        fn maintains_equality(
+            a in arb::<Decimal>(),
+            b in arb::<Decimal>(),
         ) {
-            let a = Money::new(a, currency);
-            let b = Money::new(b, currency);
-
-            assert_eq!(a + b, b + a);
+            prop_assert_eq!(Money::<USD>::new(a) == Money::new(b), a == b);
         }
 
         #[test]
-        fn sums_correctly_if_same_currency(
-            UpTo(a) in arb::<UpTo<{ usize::MAX }>>(),
-            UpTo(b) in arb::<UpTo<{ usize::MAX }>>(),
-            currency in arb::<Currency>()
+        fn maintains_ordering(
+            a in arb::<Decimal>(),
+            b in arb::<Decimal>(),
         ) {
-            let a = Money::new(a, currency);
-            let b = Money::new(b, currency);
-
-            assert_eq!((a + b).unwrap().amount, a.amount + b.amount);
-            assert_eq!((b + a).unwrap().amount, b.amount + a.amount);
+            prop_assert_eq!(Money::<USD>::new(a) == Money::new(b), a == b);
+            prop_assert_eq!(Money::<USD>::new(a) >= Money::new(b), a >= b);
+            prop_assert_eq!(Money::<USD>::new(a) <= Money::new(b), a <= b);
+            prop_assert_eq!(Money::<USD>::new(a) > Money::new(b), a > b);
+            prop_assert_eq!(Money::<USD>::new(a) < Money::new(b), a < b);
         }
 
         #[test]
-        fn sum_returns_error_if_different_currency(
-            a in arb::<UpTo<{ usize::MAX }>>(),
-            b in arb::<UpTo<{ usize::MAX }>>(),
-            InequalPair(ca, cb) in arb::<InequalPair<Currency>>(),
+        fn allows_addition(
+            BoundedDecimal(a, _) in arb::<BoundedDecimal<{ u32::MAX as usize }>>(),
+            BoundedDecimal(b, _) in arb::<BoundedDecimal<{ u32::MAX as usize }>>(),
         ) {
-            let a = Money::new(a.0, ca);
-            let b = Money::new(b.0, cb);
-
-            assert_eq!(
-                a + b,
-                Err(
-                    FinanceError::MismatchedExchange {
-                        expected: ca,
-                        got: cb
-                })
-            );
+            prop_assert_eq!(Money::<USD>::new(a) + Money::new(b), Money::new(a + b));
+            prop_assert_eq!(Money::<USD>::new(a) + Money::new(b), Money::new(b + a));
         }
 
         #[test]
-        fn subs_correctly_if_same_currency(
-            a in arb::<UpTo<{ usize::MAX }>>(),
-            b in arb::<UpTo<{ usize::MAX }>>(),
-            currency in arb::<Currency>()
+        fn allows_add_assign(
+            BoundedDecimal(a, _) in arb::<BoundedDecimal<{ u32::MAX as usize }>>(),
+            BoundedDecimal(b, _) in arb::<BoundedDecimal<{ u32::MAX as usize }>>(),
         ) {
-            let (a,b) = if a > b { (a,b) } else { (b,a) };
+            let mut ma = Money::<USD>::new(a);
+            ma += Money::new(b);
 
-            let a = Money::new(a.0, currency);
-            let b = Money::new(b.0, currency);
-
-            assert_eq!((a - b).unwrap().amount, a.amount - b.amount);
+            prop_assert_eq!(ma, Money::new(a + b));
+            prop_assert_eq!(ma, Money::new(b + a));
         }
 
         #[test]
-        fn sub_returns_error_if_different_currency(
-            UpTo(value) in arb::<UpTo<{ usize::MAX }>>(),
-            InequalPair(ca, cb) in arb::<InequalPair<Currency>>(),
+        fn allows_subtraction_as_result(
+            SortedPair(a, b) in arb::<SortedPair<Decimal>>(),
         ) {
-            let a = Money::new(value, ca);
-
-            assert_eq!(
-                a - a,
-                Err(
-                    FinanceError::MismatchedExchange {
-                        expected: ca,
-                        got: cb
-                })
-            );
+            prop_assert_eq!(Money::<USD>::new(a) - Money::new(b), Ok(Money::new(a - b)));
         }
 
         #[test]
-        fn sub_returns_error_if_it_would_be_negative(
-            UpTo(a) in arb::<UpTo<{ usize::MAX }>>(),
-            UpTo(b) in arb::<UpTo<{ usize::MAX }>>(),
-            currency in arb::<Currency>(),
+        fn only_allow_positive_amounts_when_subtracting(
+            a in arb::<Decimal>(),
+            b in arb::<Decimal>(),
         ) {
-            let (a, b) = match (a, b) {
-                (a, b) if a > b => (a, b),
-                (a, b) if a == b => (a + Decimal::from(1), b),
-                _ => (b, a)
-            };
+            prop_assert_eq!((Money::<USD>::new(a) - Money::<USD>::new(b)).is_ok(), a > b);
+        }
 
-            let a = Money::new(a, currency);
-            let b = Money::new(b, currency);
+        #[test]
+        fn allows_multiplication(
+            BoundedDecimal(a, _) in arb::<BoundedDecimal<{ u32::MAX as usize }>>(),
+            BoundedDecimal(b, _) in arb::<BoundedDecimal<{ u32::MAX as usize }>>(),
+        ) {
+            prop_assert_eq!(Money::<USD>::new(a) * Money::new(b), Money::new(a * b));
+            prop_assert_eq!(Money::<USD>::new(a) * Money::new(b), Money::new(b * a));
+        }
 
-            assert_eq!(
-                b - a,
-                Err(FinanceError::NegativeAmount)
-            );
+        #[test]
+        fn allows_mul_assign(
+            BoundedDecimal(a, _) in arb::<BoundedDecimal<{ u32::MAX as usize }>>(),
+            BoundedDecimal(b, _) in arb::<BoundedDecimal<{ u32::MAX as usize }>>(),
+        ) {
+            let mut ma = Money::<USD>::new(a);
+            ma *= Money::new(b);
+
+            prop_assert_eq!(ma, Money::new(a * b));
+            prop_assert_eq!(ma, Money::new(b * a));
+        }
+
+        #[test]
+        fn allows_division(
+            a in arb::<Decimal>(),
+            b in arb::<Decimal>(),
+        ) {
+            prop_assert_eq!(Money::<USD>::new(a) / Money::new(b), Money::new(a / b));
+        }
+
+        #[test]
+        fn division_is_not_commutative(
+            InequalPair(NotZero(a), NotZero(b)) in arb::<InequalPair<NotZero<Money<USD>>>>(),
+        ) {
+            prop_assert_ne!(a / b, b / a);
+        }
+
+        #[test]
+        fn allows_div_assign(
+            a in arb::<Decimal>(),
+            b in arb::<Decimal>(),
+        ) {
+            let mut ma = Money::<USD>::new(a);
+            ma /= Money::new(b);
+
+            prop_assert_eq!(ma, Money::new(a / b));
         }
     }
 }
