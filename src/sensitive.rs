@@ -2,7 +2,8 @@ use std::fmt::{Debug, Display, Formatter};
 use std::hash::Hash;
 use std::str::FromStr;
 
-use arbitrary::{Arbitrary, Unstructured};
+#[cfg(feature = "testing")]
+use proptest::prelude::*;
 
 use crate::testing::NegateArbitrary;
 
@@ -81,16 +82,19 @@ impl<T: Hash> Hash for Sensitive<T> {
 }
 
 #[cfg(feature = "testing")]
-impl<'a, T: Arbitrary<'a>> Arbitrary<'a> for Sensitive<T> {
-    fn arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self> {
-        Ok(Self(u.arbitrary()?))
+impl<T: Arbitrary + 'static> Arbitrary for Sensitive<T> {
+    type Parameters = T::Parameters;
+    type Strategy = BoxedStrategy<Self>;
+
+    fn arbitrary_with(args: Self::Parameters) -> Self::Strategy {
+        T::arbitrary_with(args).prop_map(Self).boxed()
     }
 }
 
 #[cfg(feature = "testing")]
-impl<'a, T: NegateArbitrary<'a> + Arbitrary<'a>> NegateArbitrary<'a> for Sensitive<T> {
-    fn negate_arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self> {
-        Ok(Self(T::negate_arbitrary(u)?))
+impl<T: NegateArbitrary + 'static> NegateArbitrary for Sensitive<T> {
+    fn negate_arbitrary() -> <Self as Arbitrary>::Strategy {
+        T::negate_arbitrary().prop_map(Self).boxed()
     }
 }
 
@@ -98,13 +102,11 @@ impl<'a, T: NegateArbitrary<'a> + Arbitrary<'a>> NegateArbitrary<'a> for Sensiti
 mod tests {
     use proptest::*;
 
-    use crate::testing::*;
-
     use super::*;
 
     proptest! {
         #[test]
-        fn hides_internal_representation(s in gen::<Sensitive<String>>()) {
+        fn hides_internal_representation(s in any::<Sensitive<String>>()) {
             assert_eq!(s.to_string(), MASK);
             assert_eq!(format!("{}", s), MASK);
             assert_eq!(
@@ -114,7 +116,7 @@ mod tests {
         }
 
         #[test]
-        fn preserves_equality(a in gen::<String>(), b in gen::<String>()) {
+        fn preserves_equality(a in any::<String>(), b in any::<String>()) {
             prop_assert_eq!(
                 Sensitive::new(a.clone()) == Sensitive::new(b.clone()),
                 a == b
@@ -122,7 +124,7 @@ mod tests {
         }
 
         #[test]
-        fn preserves_order(a in gen::<usize>(), b in gen::<usize>()) {
+        fn preserves_order(a in any::<usize>(), b in any::<usize>()) {
             prop_assert_eq!(Sensitive::new(a) == Sensitive::new(b), a == b);
             prop_assert_eq!(Sensitive::new(a) >= Sensitive::new(b), a >= b);
             prop_assert_eq!(Sensitive::new(a) <= Sensitive::new(b), a <= b);
@@ -131,7 +133,7 @@ mod tests {
         }
 
         #[test]
-        fn preserves_into(a in gen::<usize>()) {
+        fn preserves_into(a in any::<usize>()) {
             assert_eq!(Sensitive::from(a), Sensitive::new(a));
         }
     }

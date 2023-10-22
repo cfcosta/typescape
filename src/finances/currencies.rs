@@ -8,7 +8,7 @@ macro_rules! currency {
     ($t:tt,$name:expr,$decimals:expr) => {
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
         #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-        #[cfg_attr(feature = "testing", derive(arbitrary::Arbitrary))]
+        #[cfg_attr(feature = "testing", derive(proptest_derive::Arbitrary))]
         pub struct $t;
 
         impl Currency for $t {

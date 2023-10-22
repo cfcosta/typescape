@@ -4,7 +4,13 @@ use std::{
     str::FromStr,
 };
 
-use crate::*;
+#[cfg(feature = "testing")]
+use proptest::{
+    prelude::*,
+    strategy::{BoxedStrategy, Strategy},
+};
+
+use crate::{testing::Rng, *};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -42,41 +48,27 @@ impl DerefMut for Text {
 }
 
 #[cfg(feature = "testing")]
-impl<'a> arbitrary::Arbitrary<'a> for Text {
-    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
-        use rand::SeedableRng;
+impl Arbitrary for Text {
+    type Parameters = ();
+    type Strategy = BoxedStrategy<Self>;
 
-        let rng = rand::rngs::StdRng::from_seed(u.arbitrary()?);
-
-        Ok(Self(lipsum::lipsum_with_rng(
-            rng,
-            u8::arbitrary(u)? as usize,
-        )))
-    }
-
-    fn size_hint(depth: usize) -> (usize, Option<usize>) {
-        let (smin, smax) = String::size_hint(depth);
-        let (vmin, vmax) = <[u8; 32]>::size_hint(depth);
-        let (umin, umax) = u8::size_hint(depth);
-
-        (
-            smin + vmin + umin,
-            smax.zip(vmax).zip(umax).map(|((a, b), c)| a + b + c),
-        )
+    fn arbitrary_with(_: Self::Parameters) -> Self::Strategy {
+        any::<(Rng, u8)>()
+            .prop_map(|(rng, size)| lipsum::lipsum_with_rng(rng.0, size as usize))
+            .prop_map(Self)
+            .boxed()
     }
 }
 
 #[cfg(all(test, feature = "testing"))]
 mod tests {
-    use proptest::*;
-
-    use crate::testing::*;
+    use proptest::prelude::*;
 
     use super::*;
 
     proptest! {
         #[test]
-        fn arbitrary_text_is_always_valid(a in gen::<Text>()) {
+        fn arbitrary_text_is_always_valid(a in any::<Text>()) {
             a.to_string().parse::<Text>().expect("Failed parsing");
         }
     }

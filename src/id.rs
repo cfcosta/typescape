@@ -1,8 +1,12 @@
 use std::{fmt::Display, marker::PhantomData, str::FromStr};
 
+use proptest::{
+    prelude::{any, Arbitrary},
+    strategy::{BoxedStrategy, Strategy},
+};
 use uuid::Uuid;
 
-use crate::*;
+use crate::{Error, Kind};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 /// An unique id pointing to a resource
@@ -57,8 +61,17 @@ impl<'a, T: serde::Deserialize<'a>> serde::Deserialize<'a> for Id<T> {
 }
 
 #[cfg(feature = "testing")]
-impl<'a, T> arbitrary::Arbitrary<'a> for Id<T> {
-    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
-        Ok(Uuid::from_u128(u.arbitrary()?).into())
+impl<T> Arbitrary for Id<T>
+where
+    T: Arbitrary + std::fmt::Debug + Into<Self> + 'static,
+{
+    type Parameters = ();
+    type Strategy = BoxedStrategy<Self>;
+
+    fn arbitrary_with(_: Self::Parameters) -> Self::Strategy {
+        any::<u128>()
+            .prop_map(Uuid::from_u128)
+            .prop_map(Self::from)
+            .boxed()
     }
 }

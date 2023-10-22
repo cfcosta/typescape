@@ -4,8 +4,14 @@ use std::{
     str::FromStr,
 };
 
+#[cfg(feature = "testing")]
+use fake::{faker::internet::en::SafeEmail, Fake};
+
+#[cfg(feature = "testing")]
+use proptest::prelude::*;
+
 use crate::{
-    testing::{from_regex, NegateArbitrary},
+    testing::{NegateArbitrary, Rng},
     *,
 };
 
@@ -49,33 +55,29 @@ impl DerefMut for Email {
 }
 
 #[cfg(feature = "testing")]
-impl<'a> arbitrary::Arbitrary<'a> for Email {
-    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
-        use fake::{faker::internet::en::SafeEmail, Fake};
-        use rand::{rngs::StdRng, SeedableRng};
+impl Arbitrary for Email {
+    type Parameters = ();
+    type Strategy = BoxedStrategy<Self>;
 
-        let mut rng = StdRng::from_seed(u.arbitrary()?);
-        let domain = SafeEmail().fake_with_rng(&mut rng);
-        Ok(Self(domain))
-    }
-
-    fn size_hint(depth: usize) -> (usize, Option<usize>) {
-        String::size_hint(depth)
+    fn arbitrary_with(_: Self::Parameters) -> Self::Strategy {
+        any::<Rng>()
+            .prop_map(|mut rng| SafeEmail().fake_with_rng(&mut rng.0))
+            .prop_map(Self)
+            .boxed()
     }
 }
 
-#[cfg(feature = "testing")]
-impl<'a> NegateArbitrary<'a> for Email {
-    fn negate_arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
-        let gen = from_regex(u, "[a-zA-Z0-9._%+-]+[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}");
-
-        Ok(Self(gen.get()))
+impl NegateArbitrary for Email {
+    fn negate_arbitrary() -> <Self as Arbitrary>::Strategy {
+        "[a-zA-Z0-9._%+-]+[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"
+            .prop_map(Self)
+            .boxed()
     }
 }
 
 #[cfg(all(test, feature = "testing"))]
 mod tests {
-    use proptest::*;
+    use proptest::prelude::*;
 
     use crate::testing::*;
 
@@ -83,7 +85,7 @@ mod tests {
 
     proptest! {
         #[test]
-        fn arbitrary_email_is_always_valid(a in gen::<Email>()) {
+        fn arbitrary_email_is_always_valid(a in any::<Email>()) {
             a.to_string().parse::<Email>().expect("Failed parsing");
         }
 
