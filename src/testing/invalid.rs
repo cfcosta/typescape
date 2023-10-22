@@ -1,4 +1,4 @@
-use std::fmt::Debug;
+use std::{fmt::Debug, str::FromStr};
 
 use arbitrary::{Arbitrary, Unstructured};
 use proptest::prelude::Strategy;
@@ -23,6 +23,20 @@ where
 {
     fn negate_arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self> {
         Ok(Self(T::arbitrary(u)?))
+    }
+}
+
+impl<T: FromStr> FromStr for Invalid<T> {
+    type Err = T::Err;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Self(T::from_str(s)?))
+    }
+}
+
+impl<T: ToString> ToString for Invalid<T> {
+    fn to_string(&self) -> String {
+        self.0.to_string()
     }
 }
 
@@ -54,6 +68,11 @@ mod tests {
                 a.to_string().parse::<Username>(),
                 Err(Error::FailedParsing(Kind::Username, a.to_string()))
             );
+        }
+
+        #[test]
+        fn invalid_of_invalid_is_valid(a in invalid::<Invalid<Username>>()) {
+            assert!(a.to_string().parse::<Username>().is_ok());
         }
 
         #[test]
