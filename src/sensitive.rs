@@ -2,9 +2,10 @@ use std::fmt::{Debug, Display, Formatter};
 use std::hash::Hash;
 use std::str::FromStr;
 
-#[cfg(feature = "testing")]
+#[cfg(any(test, feature = "testing"))]
 use proptest::prelude::*;
 
+#[cfg(any(test, feature = "testing"))]
 use crate::testing::NegateArbitrary;
 
 const MASK: &str = "******";
@@ -81,7 +82,7 @@ impl<T: Hash> Hash for Sensitive<T> {
     }
 }
 
-#[cfg(feature = "testing")]
+#[cfg(any(test, feature = "testing"))]
 impl<T: Arbitrary + 'static> Arbitrary for Sensitive<T> {
     type Parameters = T::Parameters;
     type Strategy = BoxedStrategy<Self>;
@@ -91,16 +92,16 @@ impl<T: Arbitrary + 'static> Arbitrary for Sensitive<T> {
     }
 }
 
-#[cfg(feature = "testing")]
+#[cfg(any(test, feature = "testing"))]
 impl<T: NegateArbitrary + 'static> NegateArbitrary for Sensitive<T> {
     fn negate_arbitrary() -> <Self as Arbitrary>::Strategy {
         T::negate_arbitrary().prop_map(Self).boxed()
     }
 }
 
-#[cfg(all(test, feature = "testing"))]
+#[cfg(test)]
 mod tests {
-    use proptest::*;
+    use proptest::prelude::*;
 
     use super::*;
 

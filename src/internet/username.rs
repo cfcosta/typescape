@@ -4,13 +4,13 @@ use std::{
     str::FromStr,
 };
 
-#[cfg(feature = "testing")]
+#[cfg(any(test, feature = "testing"))]
 use fake::{faker::internet::en as f, Fake};
 
-#[cfg(feature = "testing")]
+#[cfg(any(test, feature = "testing"))]
 use crate::testing::{NegateArbitrary, Rng};
 
-#[cfg(feature = "testing")]
+#[cfg(any(test, feature = "testing"))]
 use proptest::prelude::*;
 
 use crate::{Error, Kind};
@@ -62,7 +62,7 @@ impl DerefMut for Username {
     }
 }
 
-#[cfg(feature = "testing")]
+#[cfg(any(test, feature = "testing"))]
 impl Arbitrary for Username {
     type Parameters = ();
     type Strategy = BoxedStrategy<Self>;
@@ -82,7 +82,7 @@ impl NegateArbitrary for Username {
     }
 }
 
-#[cfg(all(test, feature = "testing"))]
+#[cfg(test)]
 mod tests {
     use proptest::prelude::*;
 

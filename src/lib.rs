@@ -2,7 +2,7 @@ mod id;
 mod sensitive;
 mod text;
 
-#[cfg(feature = "testing")]
+#[cfg(any(test, feature = "testing"))]
 pub mod testing;
 
 #[cfg(feature = "internet")]

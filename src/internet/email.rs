@@ -4,10 +4,10 @@ use std::{
     str::FromStr,
 };
 
-#[cfg(feature = "testing")]
+#[cfg(any(test, feature = "testing"))]
 use fake::{faker::internet::en::SafeEmail, Fake};
 
-#[cfg(feature = "testing")]
+#[cfg(any(test, feature = "testing"))]
 use proptest::prelude::*;
 
 use crate::{
@@ -54,7 +54,7 @@ impl DerefMut for Email {
     }
 }
 
-#[cfg(feature = "testing")]
+#[cfg(any(test, feature = "testing"))]
 impl Arbitrary for Email {
     type Parameters = ();
     type Strategy = BoxedStrategy<Self>;
@@ -75,7 +75,7 @@ impl NegateArbitrary for Email {
     }
 }
 
-#[cfg(all(test, feature = "testing"))]
+#[cfg(test)]
 mod tests {
     use proptest::prelude::*;
 

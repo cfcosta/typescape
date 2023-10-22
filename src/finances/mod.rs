@@ -91,7 +91,7 @@ impl<C> DivAssign for Money<C> {
     }
 }
 
-#[cfg(feature = "testing")]
+#[cfg(any(test, feature = "testing"))]
 impl<C> NumberExt for Money<C> {
     fn is_zero(&self) -> bool {
         NumberExt::is_zero(&self.0)
@@ -106,7 +106,7 @@ impl<C> NumberExt for Money<C> {
     }
 }
 
-#[cfg(all(test, feature = "testing"))]
+#[cfg(test)]
 mod tests {
     use proptest::prelude::*;
 

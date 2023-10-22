@@ -4,13 +4,16 @@ use std::{
     str::FromStr,
 };
 
-#[cfg(feature = "testing")]
+#[cfg(any(test, feature = "testing"))]
 use proptest::{
     prelude::*,
     strategy::{BoxedStrategy, Strategy},
 };
 
-use crate::{testing::Rng, *};
+#[cfg(any(test, feature = "testing"))]
+use crate::testing::Rng;
+
+use crate::Error;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -47,7 +50,7 @@ impl DerefMut for Text {
     }
 }
 
-#[cfg(feature = "testing")]
+#[cfg(any(test, feature = "testing"))]
 impl Arbitrary for Text {
     type Parameters = ();
     type Strategy = BoxedStrategy<Self>;
@@ -60,7 +63,7 @@ impl Arbitrary for Text {
     }
 }
 
-#[cfg(all(test, feature = "testing"))]
+#[cfg(test)]
 mod tests {
     use proptest::prelude::*;
 

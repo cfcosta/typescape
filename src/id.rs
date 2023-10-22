@@ -1,10 +1,12 @@
 use std::{fmt::Display, marker::PhantomData, str::FromStr};
 
+use uuid::Uuid;
+
+#[cfg(any(test, feature = "testing"))]
 use proptest::{
     prelude::{any, Arbitrary},
     strategy::{BoxedStrategy, Strategy},
 };
-use uuid::Uuid;
 
 use crate::{Error, Kind};
 
@@ -60,7 +62,7 @@ impl<'a, T: serde::Deserialize<'a>> serde::Deserialize<'a> for Id<T> {
     }
 }
 
-#[cfg(feature = "testing")]
+#[cfg(any(test, feature = "testing"))]
 impl<T> Arbitrary for Id<T>
 where
     T: Arbitrary + std::fmt::Debug + Into<Self> + 'static,
