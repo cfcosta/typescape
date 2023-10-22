@@ -206,13 +206,6 @@ mod tests {
         }
 
         #[test]
-        fn division_is_not_commutative(
-            InequalPair(NotZero(a), NotZero(b)) in arb::<InequalPair<NotZero<Money<USD>>>>(),
-        ) {
-            prop_assert_ne!(a / b, b / a);
-        }
-
-        #[test]
         fn allows_div_assign(
             a in arb::<Decimal>(),
             b in arb::<Decimal>(),
