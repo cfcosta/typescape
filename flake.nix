@@ -16,7 +16,7 @@
         tools = rust-dev-tools.setup system (pkgs: {
           name = "ts";
           rust = rust-dev-tools.version.fromCargoToml ./Cargo.toml;
-          dependencies = with pkgs; [ openssl ];
+          dependencies = with pkgs; [ ];
         });
       in { devShells.default = tools.devShell; });
 }
