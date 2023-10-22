@@ -94,11 +94,15 @@ impl<C> DivAssign for Money<C> {
 #[cfg(feature = "testing")]
 impl<C> NumberExt for Money<C> {
     fn is_zero(&self) -> bool {
-        self.0.is_zero()
+        NumberExt::is_zero(&self.0)
     }
 
     fn is_positive(&self) -> bool {
-        self.0.is_sign_positive()
+        NumberExt::is_positive(&self.0)
+    }
+
+    fn is_negative(&self) -> bool {
+        NumberExt::is_negative(&self.0)
     }
 }
 
@@ -109,111 +113,104 @@ mod tests {
 
     use super::{currencies::USD, *};
 
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-    pub struct BoundedDecimal<const N: usize>(Decimal, usize);
-
-    impl<'a, const N: usize> arbitrary::Arbitrary<'a> for BoundedDecimal<N> {
-        fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
-            let max: Decimal = N.into();
-            Ok(Self(Decimal::arbitrary(u)? % max, N))
-        }
-    }
+    type M = Money<USD>;
+    type Bound = InBounds<Decimal, 0, { u32::MAX as usize }>;
 
     proptest! {
         #[test]
         fn maintains_equality(
-            a in arb::<Decimal>(),
-            b in arb::<Decimal>(),
+            InBounds(a) in arb::<Bound>(),
+            InBounds(b) in arb::<Bound>(),
         ) {
-            prop_assert_eq!(Money::<USD>::new(a) == Money::new(b), a == b);
+            prop_assert_eq!(M::new(a) == M::new(b), a == b);
         }
 
         #[test]
         fn maintains_ordering(
-            a in arb::<Decimal>(),
-            b in arb::<Decimal>(),
+            InBounds(a) in arb::<Bound>(),
+            InBounds(b) in arb::<Bound>(),
         ) {
-            prop_assert_eq!(Money::<USD>::new(a) == Money::new(b), a == b);
-            prop_assert_eq!(Money::<USD>::new(a) >= Money::new(b), a >= b);
-            prop_assert_eq!(Money::<USD>::new(a) <= Money::new(b), a <= b);
-            prop_assert_eq!(Money::<USD>::new(a) > Money::new(b), a > b);
-            prop_assert_eq!(Money::<USD>::new(a) < Money::new(b), a < b);
+            prop_assert_eq!(M::new(a) == M::new(b), a == b);
+            prop_assert_eq!(M::new(a) >= M::new(b), a >= b);
+            prop_assert_eq!(M::new(a) <= M::new(b), a <= b);
+            prop_assert_eq!(M::new(a) > M::new(b), a > b);
+            prop_assert_eq!(M::new(a) < M::new(b), a < b);
         }
 
         #[test]
         fn allows_addition(
-            BoundedDecimal(a, _) in arb::<BoundedDecimal<{ u32::MAX as usize }>>(),
-            BoundedDecimal(b, _) in arb::<BoundedDecimal<{ u32::MAX as usize }>>(),
+            InBounds(a) in arb::<Bound>(),
+            InBounds(b) in arb::<Bound>(),
         ) {
-            prop_assert_eq!(Money::<USD>::new(a) + Money::new(b), Money::new(a + b));
-            prop_assert_eq!(Money::<USD>::new(a) + Money::new(b), Money::new(b + a));
+            prop_assert_eq!(M::new(a) + M::new(b), M::new(a + b));
+            prop_assert_eq!(M::new(a) + M::new(b), M::new(b + a));
         }
 
         #[test]
         fn allows_add_assign(
-            BoundedDecimal(a, _) in arb::<BoundedDecimal<{ u32::MAX as usize }>>(),
-            BoundedDecimal(b, _) in arb::<BoundedDecimal<{ u32::MAX as usize }>>(),
+            InBounds(a) in arb::<Bound>(),
+            InBounds(b) in arb::<Bound>(),
         ) {
-            let mut ma = Money::<USD>::new(a);
-            ma += Money::new(b);
+            let mut ma = M::new(a);
+            ma += M::new(b);
 
-            prop_assert_eq!(ma, Money::new(a + b));
-            prop_assert_eq!(ma, Money::new(b + a));
+            prop_assert_eq!(ma, M::new(a + b));
+            prop_assert_eq!(ma, M::new(b + a));
         }
 
         #[test]
         fn allows_subtraction_as_result(
-            SortedPair(a, b) in arb::<SortedPair<Decimal>>(),
+            SortedPair(InBounds(a), InBounds(b)) in arb::<SortedPair<Bound>>(),
         ) {
-            prop_assert_eq!(Money::<USD>::new(a) - Money::new(b), Ok(Money::new(a - b)));
+            prop_assert_eq!(M::new(a) - M::new(b), Ok(M::new(a - b)));
         }
 
         #[test]
         fn only_allow_positive_amounts_when_subtracting(
-            a in arb::<Decimal>(),
-            b in arb::<Decimal>(),
+            InBounds(a) in arb::<Bound>(),
+            InBounds(b) in arb::<Bound>(),
         ) {
-            prop_assert_eq!((Money::<USD>::new(a) - Money::<USD>::new(b)).is_ok(), a > b);
+            prop_assert_eq!((M::new(a) - M::new(b)).is_ok(), a > b);
         }
 
         #[test]
         fn allows_multiplication(
-            BoundedDecimal(a, _) in arb::<BoundedDecimal<{ u32::MAX as usize }>>(),
-            BoundedDecimal(b, _) in arb::<BoundedDecimal<{ u32::MAX as usize }>>(),
+            InBounds(a) in arb::<Bound>(),
+            InBounds(b) in arb::<Bound>(),
         ) {
-            prop_assert_eq!(Money::<USD>::new(a) * Money::new(b), Money::new(a * b));
-            prop_assert_eq!(Money::<USD>::new(a) * Money::new(b), Money::new(b * a));
+            prop_assert_eq!(M::new(a) * M::new(b), M::new(a * b));
+            prop_assert_eq!(M::new(a) * M::new(b), M::new(b * a));
         }
 
         #[test]
         fn allows_mul_assign(
-            BoundedDecimal(a, _) in arb::<BoundedDecimal<{ u32::MAX as usize }>>(),
-            BoundedDecimal(b, _) in arb::<BoundedDecimal<{ u32::MAX as usize }>>(),
+            InBounds(a) in arb::<Bound>(),
+            InBounds(b) in arb::<Bound>(),
         ) {
-            let mut ma = Money::<USD>::new(a);
-            ma *= Money::new(b);
+            let mut ma = M::new(a);
+            ma *= M::new(b);
 
-            prop_assert_eq!(ma, Money::new(a * b));
-            prop_assert_eq!(ma, Money::new(b * a));
+            prop_assert_eq!(ma, M::new(a * b));
+            prop_assert_eq!(ma, M::new(b * a));
         }
 
         #[test]
         fn allows_division(
-            a in arb::<Decimal>(),
-            b in arb::<Decimal>(),
+            InBounds(a) in arb::<InBounds<Decimal, 0, { u32::MAX as usize }>>(),
+            InBounds(b) in arb::<InBounds<Decimal, 1, { u32::MAX as usize }>>(),
         ) {
-            prop_assert_eq!(Money::<USD>::new(a) / Money::new(b), Money::new(a / b));
+            prop_assert_eq!(M::new(a) / M::new(b), M::new(a / b));
         }
 
         #[test]
         fn allows_div_assign(
-            a in arb::<Decimal>(),
-            b in arb::<Decimal>(),
+            InBounds(a) in arb::<InBounds<Decimal, 0, { u32::MAX as usize }>>(),
+            InBounds(b) in arb::<InBounds<Decimal, 1, { u32::MAX as usize }>>(),
         ) {
-            let mut ma = Money::<USD>::new(a);
-            ma /= Money::new(b);
+            let mut ma = M::new(a);
+            ma /= M::new(b);
 
-            prop_assert_eq!(ma, Money::new(a / b));
+            prop_assert_eq!(ma, M::new(a / b));
         }
     }
 }
