@@ -4,6 +4,14 @@ use std::{
     str::FromStr,
 };
 
+#[cfg(feature = "arrow2")]
+use arrow2::{
+    array::{MutableUtf8Array, TryPush, Utf8Array},
+    datatypes::DataType,
+};
+#[cfg(feature = "arrow2")]
+use arrow2_convert::{deserialize::ArrowDeserialize, field::ArrowField, serialize::ArrowSerialize};
+
 #[cfg(any(test, feature = "testing"))]
 use fake::{faker::internet::en::SafeEmail, Fake};
 
@@ -72,6 +80,42 @@ impl NegateArbitrary for Email {
         "[a-zA-Z0-9._%+-]+[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"
             .prop_map(Self)
             .boxed()
+    }
+}
+
+#[cfg(feature = "arrow2")]
+impl ArrowField for Email {
+    type Type = Self;
+
+    fn data_type() -> DataType {
+        DataType::Utf8
+    }
+}
+
+#[cfg(feature = "arrow2")]
+impl ArrowSerialize for Email {
+    type MutableArrayType = MutableUtf8Array<i64>;
+
+    fn new_array() -> Self::MutableArrayType {
+        MutableUtf8Array::<i64>::default()
+    }
+
+    fn arrow_serialize(
+        v: &<Self as arrow2_convert::field::ArrowField>::Type,
+        array: &mut Self::MutableArrayType,
+    ) -> arrow2::error::Result<()> {
+        array.try_push(Some(v.0.clone()))
+    }
+}
+
+#[cfg(feature = "arrow2")]
+impl ArrowDeserialize for Email {
+    type ArrayType = Utf8Array<i64>;
+
+    fn arrow_deserialize(
+        v: <&Self::ArrayType as IntoIterator>::Item,
+    ) -> Option<<Self as ArrowField>::Type> {
+        v.map(|v| Self(v.to_string()))
     }
 }
 
